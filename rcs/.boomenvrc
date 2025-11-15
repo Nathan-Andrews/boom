@@ -1,0 +1,120 @@
+#!/usr/bin/env bash
+
+## BOOM env allows running boom commands without the `boom` - we assume the boom context
+BOOMENV=""
+
+###ExcAlias avg
+# "\t${B}avg${N}\n\t\tboom env alias for boomavg";
+###
+###ExcAlias board
+# "\t${B}board${N}\n\t\tboom env alias for boom board";
+###
+###ExcAlias drought
+# "\t${B}drought${N}\n\t\tboom env alias for boom drought";
+###
+###ExcAlias favorite
+# "\t${B}favorite${N}\n\t\tboom env alias for boom favorite";
+###
+###ExcAlias hall
+# "\t${B}hall${N}\n\t\tboom env alias for boom hall";
+###
+###ExcAlias latest
+# "\t${B}latest${N}\n\t\tboom env alias for boom latest";
+###
+###ExcAlias meter
+# "\t${B}meter${N}\n\t\tboom env alias for boommeter";
+###
+###ExcAlias patchnotes
+# "\t${B}patchnotes${N}\n\t\tboom env alias for boom patchnotes";
+###
+###ExcAlias todo
+# "\t${B}todo${N}\n\t\tboom env alias for boom todo";
+###
+###ExcAlias total
+# "\t${B}total${N}\n\t\tboom env alias for boom total";
+###
+###ExcAlias zone
+# "\t${B}zone${N}\n\t\tboom env alias for boom zone";
+###
+###ExcAlias bot
+# "\t${B}bot${N}\n\t\tboom env alias for boombot";
+###
+###ExcAlias bar
+# "\t${B}bar${N}\n\t\tboom env alias for boombar";
+###
+###ExcAlias docs
+# "\t${B}docs${N}\n\t\tboom env alias for boomdocs";
+###
+command -v avg &>/dev/null        || { alias avg='boomavg'                && BOOMENV+="avg";         }
+command -v board &>/dev/null      || { alias board='boom board'           && BOOMENV+=" board";      }
+command -v drought &>/dev/null    || { alias drought='boom drought'       && BOOMENV+=" drought";    }
+command -v favorite &>/dev/null   || { alias favorite='boom favorite'     && BOOMENV+=" favorite";   }
+command -v hall &>/dev/null       || { alias hall='boom hall'             && BOOMENV+=" hall";       }
+command -v latest &>/dev/null     || { alias latest='boom latest'         && BOOMENV+=" latest";     }
+command -v meter &>/dev/null      || { alias meter='boommeter'            && BOOMENV+=" meter";      }
+command -v patchnotes &>/dev/null || { alias patchnotes='boom patchnotes' && BOOMENV+=" patchnotes"; }
+command -v todo &>/dev/null       || { alias todo='boom todo'             && BOOMENV+=" todo";       }
+command -v total &>/dev/null      || { alias total='boom total'           && BOOMENV+=" total";      }
+command -v zone &>/dev/null       || { alias zone='boom zone'             && BOOMENV+=" zone";       }
+command -v bot &>/dev/null        || { alias bot='boombot'                && BOOMENV+=" bot";        }
+command -v bar &>/dev/null        || { alias bar='boombar'                && BOOMENV+=" bar";        }
+command -v docs &>/dev/null       || { alias docs='boomdocs'              && BOOMENV+=" docs";       }
+
+# Completion - took alias expansion from blog.brujordet.no/post/bash/proper-autocompletion-for-bash-alias
+_expand_alias() {
+  local alias_name alias_def
+  alias_name=$1
+  [[ -z $alias_name ]] && return 1
+  type "$alias_name" &>/dev/null || return 1
+  alias_def=$(alias "$alias_name")
+  eval printf %s "${alias_def//alias ${alias_name}=}" 2>/dev/null # dequote
+}
+_update_comp_words() {
+  local alias_name alias_val
+  alias_name=$1
+  alias_val=$2
+  [[ -z $alias_name || -z $alias_val ]] && return 1
+
+  local alias_val_array
+  read -r -a alias_val_array <<< "$alias_val"
+  local comp_words=()
+
+  for word in "${COMP_WORDS[@]}"; do
+    if [[ $word == "$alias_name" ]]; then
+      comp_words+=("${alias_val_array[@]}")
+    else
+      comp_words+=("$word")
+    fi
+  done
+
+  COMP_WORDS=("${comp_words[@]}")
+}
+_alias_completion_wrapper() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  local alias_name alias_val
+  alias_name=${COMP_WORDS[0]}
+  alias_val="$(_expand_alias "$alias_name")"
+  [[ -z $alias_val ]] && return 1
+
+  _update_comp_words "$alias_name" "$alias_val"
+  COMP_LINE=${COMP_LINE//${alias_name}/${alias_value}}
+  COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
+  COMP_POINT=${#COMP_LINE}
+
+  local prev_word curr_word
+  curr_word=${COMP_WORDS[$COMP_CWORD]}
+  if [[ ${#COMP_WORDS[@]} -ge 2 ]]; then
+    prev_word=${COMP_WORDS[$(( COMP_CWORD - 1))]}
+  fi
+  local cmd=${COMP_WORDS[0]}
+  local comp_def=$(complete -p "$cmd")
+  comp_func=$(sed -ne "s/^complete\( .*\)\{0,1\} -F \(.*\) ${cmd}/\2/p" <<< "$comp_def")
+
+  # function 1 2 3 - as if calling from full function
+  "$comp_func" "$cmd" "$curr_word" "$prev_word"
+}
+for aliasname in $BOOMENV; do
+  echo Established alias \'$aliasname=$(_expand_alias $aliasname)\'
+  complete -F _alias_completion_wrapper $aliasname
+done
+

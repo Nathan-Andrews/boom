@@ -1,0 +1,139 @@
+#!/usr/bin/env bash
+
+# Adapted from tuckerdc's .shortcutsrc for broader use with .boomrc #
+# Some of the implementation is overkill bc it is trimmed down a little #
+
+_boomScFiles() { \ls -1 /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boom*rc; }
+export _boomValidScModifiers=($(echo "Dev Sub Exc"))
+# Dev fxns are documented but hidden functions
+# Sub fxns are _word-word functions that shouldn't appear in `shortcuts`
+# Exc fxns are deprecated/alternate but still usable commands that redirect to more recent/different docs
+
+###Function boomdocs
+# "\t${B}boomdocs${N} [CMD]";
+# "\t\tboomdocs lists all currently existent functions and aliases from boom rc files";
+# "\t\talternatively, show documentation for only one function or alias with CMD arg";
+###
+unalias boomdocs &>/dev/null
+boomdocs() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: doom detected: run \`bringtheboom\` to read the docs; return; fi
+  if [[ "$1" == "noBorN" ]]; then
+    shift
+    local B='';
+    local N='';
+  else
+    local B='\033[1m';
+    local N='\033[00m';
+  fi
+
+  local filename
+  local files
+
+  files=($(_boomScFiles))
+
+  # Allows for hidden modifiers that show docs of Modifier{Function,Alias} type
+  local modifier=
+  if [[ " ${_boomValidScModifiers[@]} " =~ " $1 " ]]; then
+    modifier=$1
+    shift
+  fi
+
+  _aliases() {
+    for filename in ${files[@]}; do
+      if [ "$(sed -n '/^###'$modifier'Alias/p' $filename)" ]; then
+        bash -c "export B='$B'; export N='$N'; source $BOOMCFGFILE; $(sed -n '/^###'$modifier'Alias/,/^###$/ s/# \(.*\);/echo -e \1/p' $filename)"
+      fi
+    done
+  }
+
+  _functions() {
+    for filename in ${files[@]}; do
+      if [ "$(sed -n '/^###'$modifier'Function/p' $filename)" ]; then
+        bash -c "export B='$B'; export N='$N'; source $BOOMCFGFILE; $(sed -n '/^###'$modifier'Function/,/^###$/ s/# \(.*\);/echo -e \1/p' $filename)"
+      fi
+    done
+  }
+
+  if [ -n "$1" ]; then
+    BOOMCFGFILE=$BOOMCFGFILE _boomrcman $@
+  else
+    echo Commands in the .boomrc suite:
+    _aliases
+    _functions
+  fi
+}
+alias boomdocs="BOOMCFGFILE=$BOOMCFGFILE boomdocs"
+
+# Just print help for one command
+# '_' at start of function/alias name inserts tab at front of documentation when called with _boomrcman _<name> but will complete and work tabless with _boomrcman <name>
+# allows one documented function to call another function's documentation with $(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman _<name>")
+# only names with _ in front can have multiple words separated by -
+# _<name> takes regex
+# good example usage of this in .termrc
+_boomrcman() {
+  local files
+  local outText
+
+  local B=${B-'\033[1m'}
+  local N=${N-'\033[00m'}
+
+  files=($(_boomScFiles))
+
+  searchterm=${1:-boomrcman}
+  if [[ -n "${@:2}" ]]; then
+    searchterm=$(echo "$@" | sed 's/ /-/g')
+  fi
+
+  local modifiers=$(echo ${_boomValidScModifiers[*]} | sed 's/ /\\\|/g')
+  outText=$(bash -c "export B='$B'; export N='$N'; source $BOOMCFGFILE; $(sed -ne '/^###\('$modifiers'\)\{0,1\}\(Alias\|Function\) \(_\)\{0,1\}'"${searchterm}"'$/,/^###$/ s/# \(.*\);/echo -e \1/p' ${files[@]})")
+
+  local sedCmd=
+  if [[ "$1" =~ ^"_" ]]; then
+    local name=${1%%-*}
+    sedCmd="-e s/^/\t/; s/${name//_}-//"
+  fi
+
+  if [ -z "$outText" ]; then
+    #echo -e "\tERROR: ${searchterm} not found"
+    echo -e "No manual entry for ${searchterm}"
+  else
+    sed "$sedCmd" <<- EOF
+    $outText
+EOF
+  fi
+}
+
+_boomrcmancomp() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  files=($(_boomScFiles))
+
+  # Handle multi-word documentation completion
+  if [ "${#COMP_WORDS[@]}" != "2" ] ; then
+    # Find search string from current COMP_WORDS
+    local search=(${COMP_WORDS[@]:1})
+    if [[ "${#search[@]}" -gt "1" ]]; then
+      search="$(echo ${search[*]} | sed 's/ /-/g')"
+      if [ -z "$2" ]; then search="$search-"; fi
+    else search=${2:-$3-}
+    fi
+
+    # Check for search string in eligible fxn/alias names (start with _)
+    local underComps=($(sed -n '/^###Sub\(Alias\|Function\) _'"$search"'.*$/ s/###.* _\(.*\)$/_\1/p' ${files[@]}))
+
+    # Set reply to send back next word options based on documentation options
+    local reply=()
+    for item in "${underComps[@]}"; do
+      if [[ " $item" =~ " _$search" ]]; then # if is probably unneccessary
+        local value=${item##_${search%$2}}
+        reply+=($(sed 's/-.*//' <(echo ${value})))
+      fi
+    done
+    COMPREPLY=(${reply[@]})
+    return
+  fi
+
+  if [[ "${COMP_WORDS[@]}" =~ "_" ]]; then return; fi;
+  COMPREPLY=($(sed -n '/^###\(Alias\|Function\) \(_\)\{0,1\}'"$2"'.*$/ s/###.* \(_\)\{0,1\}\(.*\)$/\2/p' ${files[@]} | grep -v '-'))
+}
+complete -F _boomrcmancomp boomdocs
+

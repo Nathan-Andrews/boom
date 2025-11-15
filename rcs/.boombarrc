@@ -1,0 +1,328 @@
+#!/usr/bin/env bash
+
+BOOMBAR_DEFAULT_PREFIX="BBMREMARK"
+BOOMBAR_DEFAULT_BBMOFF_ALT="Last Boom: LASTBOOMS LASTCMD"
+BOOMBAR_DEFAULT_SUFFIX="DROUGHTCMDS cmds / DROUGHTMINS mins since last boom"
+BOOMBAR_DEFAULT_SHORTBAR="Need more bar room to boom!"
+
+# Init auto updated vars
+BOOMBAR_LASTBOOMS=""
+BOOMBAR_LASTNUM=""
+BOOMBAR_LASTCMD="$([[ -r $_boomStreak && -n $(cat $_boomStreak) ]] && { cat $_boomStreak | awk '{print $1}'; } || echo -n N/A)"
+
+###Function boombar
+###ExcFunction _boombar-conf
+###ExcFunction _boombar-exit
+# "\t${B}boombar${N} [${B}conf${N} | ${B}exit${N}]";
+# "\t\tboombar opens up a boom status bar on the bottom row of the terminal with fully customizable content!";
+# "\t\trun \`boombar conf\` to view the custom BOOMBAR_* env vars and magic strings that can be used with them";
+# "\t\tboombar will evaluate your configuration by replacing the auto-updated variable names with their current values";
+# "\t\trun \`boombar exit\` to remove the bar from the terminal";
+# "\n\t\tto have the bar show up on terminal startup, add \`[[ \"\$-\" =~ \"i\" ]] && boombar\` to your .bashrc after sourcing the .boomrc!";
+###
+boombar() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: boombar: command not found; return; fi
+
+  _boombarinitterm() {
+    printf '\n' # ensure we have space for the scrollbar
+      local cursorpos cols
+      read -sdR -p $'\E[6n' cursorpos # save cursor position (lines only)
+      cursorpos=${cursorpos#*\[} # line;col
+        if [[ -n "$BOOMBAR_OLDLINES" && $LINES -gt $BOOMBAR_OLDLINES ]]; then # catch resize
+          printf '\033[%d;%dH' "$BOOMBAR_OLDLINES" 0 # move cursor to the old bottom line
+          printf '\033[K' # clear the line
+        fi
+        printf '\033[%d;%dr' 0 "$((LINES - 1))" # set the scrollable region (margin)
+        if [[ -n "$BOOMBAR_OLDLINES" ]]; then
+          cols="$(echo $PS1 | sed -e 's/\$([^)]*)//g' -e 's/\\\[[^]]*\\\]//g' -e 's/\$/./g' -e 's/ /./g' -e 's/$/END/' -e 's/^/START/')"
+          cols="$(echo -n ${cols@P})"
+          cols="$((${#cols}-7))" # eval stripped down prompt length minus START/END +1 for idx of next space for cursor
+        else cols=1
+        fi
+      printf '\033[%d;%dH' "${cursorpos%;*}" "$cols" # restore the cursor location
+    printf '\033[1A' # move cursor up
+    if [[ -n "$BOOMBAR_OLDLINES" ]]; then
+      _boombarupdate # redraw if moved
+    fi
+    (:)
+    export BOOMBAR_OLDLINES=$LINES
+  }
+  _boombardeinitterm() {
+    export BOOMBARSTATE=
+    export BOOMBAR_OLDLINES=
+    printf '\0337' # save the cursor location
+      printf '\033[%d;%dr' 0 "$LINES" # reset the scrollable region (margin)
+      printf '\033[%d;%dH' "$LINES" 0 # move cursor to the bottom line
+      printf '\033[0K' # clear the line
+    printf '\0338' # reset the cursor location
+    trap - WINCH # untrap terminal resize
+    trap - EXIT # untrap exit
+  }
+
+  case "$1_" in
+    conf_) ;&
+    env_)
+      _boombarenv DROUGHTSTAT
+      _boombarenv BOOMINFO
+      _boombarenv BOOMUSERINFO
+      _boombarenv BOOMSTODAY
+      _boombarenv PRINTENV
+    ;;
+    exit_)
+      if [[ -n "$BOOMBARSTATE" ]]; then _boombardeinitterm
+      else echo Nothing to do
+      fi
+    ;;
+    _)
+      if [[ -z "$BOOMBARSTATE" ]]; then
+        shopt -s checkwinsize
+        (:) # this ensures LINES and COLUMNS are set
+        BOOMBARSTATE=on
+        BOOMBARCONTENT=
+        trap _boombarinitterm WINCH # trap terminal resize
+        trap _boombardeinitterm EXIT # trap exit
+        _boombarinitterm
+      else echo Nothing to do
+      fi
+    ;;
+    *)
+      # Put help here
+      echo Nothing to do
+    ;;
+  esac
+}
+
+_boombarenv() {
+  case "$1" in
+    DROUGHTSTAT)
+      # Call with DROUGHTSTAT
+      export BOOMBAR_DROUGHTCMDS="$(cat $_boomDrought)"
+      export BOOMBAR_DROUGHTMINS="$(((EPOCHSECONDS-$(stat -c %Y $_boomRankings))/60))"
+      export BOOMBAR_DROUGHTRATIO_CPM="$(echo "scale=2; $BOOMBAR_DROUGHTCMDS/$BOOMBAR_DROUGHTMINS" | bc 2>/dev/null)"
+      export BOOMBAR_DROUGHTRATIO_CPM="${BOOMBAR_DROUGHTRATIO_CPM:-nebulous}"
+    ;;
+    BBMREMARK)
+      # Call with BBMREMARK <remark>
+      export BOOMBAR_BBMREMARK="$2"
+    ;;
+    LASTBOOM)
+      # Call with LASTBOOM <boomnum> <cmd>
+      export BOOMBAR_LASTBOOMS="$(for i in $(seq $2); do echo -n $_BE_BOOM; done)"
+      export BOOMBAR_LASTNUM="$2"
+      export BOOMBAR_LASTCMD="$3"
+    ;;
+    BOOMINFO)
+      export BOOMBAR_BOOMPATCH=$(boom patchnotes current | awk '{print $1}')
+    ;;
+    BOOMUSERINFO)
+      # Call with BOOMUSERINFO
+      if [[ ! -r $_boomUserLog || ! -r $_boomFavor ]]; then 
+        export BOOMBAR_LASTUSERBOOM=ERR
+        export BOOMBAR_BOOMFAV=ERR
+      else
+        export BOOMBAR_LASTUSERBOOM=$(tail -n6 $_boomUserLog | grep boomed | tail -n 1)
+        export BOOMBAR_BOOMFAV=$(sed -ne '1p' $_boomFavor)
+      fi
+    ;;
+    BOOMSTODAY)
+      if [[ ! -r "$_boomFavor" || ! -r $_boomUsers ]]; then
+        export BOOMBAR_BTODAY_$USER=ERR
+        export BOOMBAR_BTODAY_1NUM=ERR
+        export BOOMBAR_BTODAY_1NAME=ERR
+        export BOOMBAR_BTODAY_2NUM=ERR
+        export BOOMBAR_BTODAY_2NAME=ERR
+        export BOOMBAR_BTODAY_3NUM=ERR
+        export BOOMBAR_BTODAY_3NAME=ERR
+        return
+      fi
+
+      local userlist user
+      userlist=($(cat $_boomUsers | xargs))
+      for user in ${userlist[@]}; do
+        local boomstotal=
+        boomstotal=$(grep -o $user <(sed -n 2p $_boomFavor) | uniq -c | awk '{print $1}');
+        [[ -z "$boomstotal" ]] && boomstotal="0";
+        local usrstr=${user//[.]/}
+        export BOOMBAR_BTODAY_${usrstr}=${boomstotal% *};
+      done
+
+      # Find ranks from variables
+      local first second third varname
+      for varname in ${userlist[@]/#/BOOMBAR_BTODAY_}; do
+        varname=${varname//[.]/}
+        if [[ -z "$first" || ${!first} -lt ${!varname} ]]; then
+          third=$second
+          second=$first
+          first=$varname
+        elif [[ -z "$second" || ${!second} -lt ${!varname} ]]; then
+          third=$second
+          second=$varname
+        elif [[ -z "$third" || ${!third} -lt ${!varname} ]]; then
+          third=$varname
+        fi
+      done 2>/dev/null
+
+      if [ -v "$first" ]; then
+        export BOOMBAR_BTODAY_1NUM=${!first}
+        export BOOMBAR_BTODAY_1NAME=${first##*_}
+      fi
+      if [ -v "$second" ]; then
+        export BOOMBAR_BTODAY_2NUM=${!second}
+        export BOOMBAR_BTODAY_2NAME=${second##*_}
+      fi
+      if [ -v "$third" ]; then
+        export BOOMBAR_BTODAY_3NUM=${!third}
+        export BOOMBAR_BTODAY_3NAME=${third##*_}
+      fi
+    ;;
+    PRINTENV)
+      # Call with PRINTENV
+      if [[ "$2" == "VALIDOPTS" ]]; then
+        echo -n "LASTBOOMS LASTNUM LASTCMD DROUGHTCMDS DROUGHTMINS DROUGHTRATIO_CPM BBMREMARK LASTUSERBOOM BOOMFAV "
+        echo -n "BTODAY_1NUM BTODAY_1NAME BTODAY_2NUM BTODAY_2NAME BTODAY_3NUM BTODAY_3NAME BTODAY_${USER//[.]/} "
+        echo "BOOMPATCH"
+      else
+        echo "Available Auto-Updated \"Magic\" Variables:"
+        if [[ "$BOOMBOTMODE" == "yes" ]]; then echo BBMREMARK=\"${BOOMBAR_BBMREMARK}\"
+        else echo BBMREMARK=\"${BOOMBAR_BBMOFF_ALT:-$BOOMBAR_DEFAULT_BBMOFF_ALT}\"
+        fi
+        echo BOOMFAV=$BOOMBAR_BOOMFAV
+        echo BOOMPATCH=$BOOMBAR_BOOMPATCH
+        local btodayuser=BOOMBAR_BTODAY_$USER
+        [ -v "$btodayuser" ] && echo ${btodayuser#BOOMBAR_}=${!btodayuser}
+        echo BTODAY_1NUM=$BOOMBAR_BTODAY_1NUM
+        echo BTODAY_1NAME=$BOOMBAR_BTODAY_1NAME
+        echo BTODAY_2NUM=$BOOMBAR_BTODAY_2NUM
+        echo BTODAY_2NAME=$BOOMBAR_BTODAY_2NAME
+        echo BTODAY_3NUM=$BOOMBAR_BTODAY_3NUM
+        echo BTODAY_3NAME=$BOOMBAR_BTODAY_3NAME
+        echo DROUGHTCMDS=$BOOMBAR_DROUGHTCMDS
+        echo DROUGHTMINS=$BOOMBAR_DROUGHTMINS
+        echo DROUGHTRATIO_CPM=$BOOMBAR_DROUGHTRATIO_CPM
+        echo LASTBOOMS=$BOOMBAR_LASTBOOMS
+        echo LASTCMD=$BOOMBAR_LASTCMD
+        echo LASTNUM=$BOOMBAR_LASTNUM
+        echo LASTUSERBOOM=\"$BOOMBAR_LASTUSERBOOM\"
+        echo
+        echo "Customizable Bar Content Variables:"
+        echo BOOMBAR_PREFIX=\"${BOOMBAR_PREFIX:-$BOOMBAR_DEFAULT_PREFIX}\"
+        echo BOOMBAR_SUFFIX=\"${BOOMBAR_SUFFIX:-$BOOMBAR_DEFAULT_SUFFIX}\"
+        echo BOOMBAR_SHORTBAR=\"${BOOMBAR_SHORTBAR:-$BOOMBAR_DEFAULT_SHORTBAR}\"
+        echo BOOMBAR_BBMOFF_ALT=\"${BOOMBAR_BBMOFF_ALT:-$BOOMBAR_DEFAULT_BBMOFF_ALT}\"
+        echo BOOMBAR_PREF_RGBBG=${BOOMBAR_PREF_RGBBG:-"78;78;78"}
+        echo BOOMBAR_SPACE_RGBBG=${BOOMBAR_SPACE_RGBBG:-"26;26;26"}
+        echo BOOMBAR_SUFF_RGBBG=${BOOMBAR_SUFF_RGBBG:-"78;78;78"}
+        echo
+        echo Set BOOMBAR_BBMOFF_ALT to \"unset\" to just ignore BBMREMARK when boombot mode is off
+        echo This allows for BoomBot\'s remarks to just add more text to the prefix when in BBM
+        echo
+        echo BTODAY_\<user//./\> will print booms today for any specific boomuser
+        echo
+        echo BOOMBAR_SHORTBAR can be PREFIX, SUFFIX, or \<text\> to get subbed in when full bar is too long
+      fi
+    ;;
+  esac
+}
+
+_boombarupdate() {
+  local prefix suffix bbmoff
+  prefix=${BOOMBAR_PREFIX:-$BOOMBAR_DEFAULT_PREFIX}
+  suffix=${BOOMBAR_SUFFIX:-$BOOMBAR_DEFAULT_SUFFIX}
+  bbmoff=${BOOMBAR_BBMOFF_ALT:-$BOOMBAR_DEFAULT_BBMOFF_ALT}
+
+  local customstrs=" $prefix $suffix $bbmoff "
+  [[ "$customstrs" =~ "DROUGHT" ]] && _boombarenv DROUGHTSTAT
+  [[ "$customstrs" =~ "BOOMPATCH" ]] && _boombarenv BOOMINFO
+  [[ "$customstrs" =~ ("LASTUSERBOOM"|"BOOMFAV") ]] && _boombarenv BOOMUSERINFO
+  [[ "$customstrs" =~ "BTODAY" ]] && _boombarenv BOOMSTODAY
+  BOOMBAR_OLDLINES=$LINES
+
+  # If bar gets in bad state, reset
+  local cursorpos
+  read -sdR -p $'\E[6n' cursorpos
+  cursorpos=${cursorpos#*\[} # line;col
+  if [[ "${cursorpos%;*}" == "$LINES" ]]; then boombar exit; boombar; fi
+
+  local barupdate prefix suffix linelen
+  if [[ "$BOOMBOTMODE" == "no" && "$prefix" =~ "BBMREMARK" ]]; then
+    if [[ "unset" == "$BOOMBAR_BBMOFF_ALT" ]]; then
+      # Definitely a better way to do this
+      prefix=${prefix//BBMREMARK /}
+      prefix=${prefix// BBMREMARK/}
+      prefix=${prefix//BBMREMARK/}
+    else
+      prefix=${prefix//BBMREMARK/$bbmoff}
+    fi
+  fi
+
+  # Sub in current env vars
+  local envvar
+  for envvar in $(_boombarenv PRINTENV VALIDOPTS); do
+    local outenvvar=BOOMBAR_$envvar
+    [[ ! -v $outenvvar ]] && continue
+    [[ "$prefix" =~ "$envvar" ]] && prefix=${prefix//$envvar/${!outenvvar}}
+    [[ "$suffix" =~ "$envvar" ]] && suffix=${suffix//$envvar/${!outenvvar}}
+  done
+
+  linelen=$((COLUMNS-${#prefix}-${#suffix}-4)) # 2 spaces on ends of both pref/suff
+  #TODO: there's gotta be a better way here
+  # boom emojis are 2 chars long in terminal, so double subtract
+  [[ "$prefix" =~ "$BOOMBAR_LASTBOOMS" ]] && linelen=$((linelen-${#BOOMBAR_LASTBOOMS}))
+  [[ "$prefix" =~ "$BOOMBAR_BBMREMARK" && "$BOOMBOTMODE" == "yes" ]] && linelen=$((linelen-2)) # Assume 2 emojis on remark...
+
+  local prefcolor spacecolor suffcolor
+  prefcolor="[48;2;${BOOMBAR_PREF_RGBBG:-78;78;78}m"
+  spacecolor="[48;2;${BOOMBAR_SPACE_RGBBG:-26;26;26}m"
+  suffcolor="[48;2;${BOOMBAR_SUFF_RGBBG:-78;78;78}m"
+  barupdate="$(printf '\033%s\033%s%*.*s\033%s' "$prefcolor $prefix " "$spacecolor" $linelen $linelen " " "$suffcolor $suffix ")"
+
+  if [[ "$BOOMBARCONTENT" == "$barupdate" && "$BOOMBARLASTCOLS" == "$COLUMNS" ]]; then return
+  else BOOMBARCONTENT="$barupdate"; BOOMBARLASTCOLS=$COLUMNS
+  fi
+
+  # Handle when bar is too short for content
+  local barestring warnline
+  barestring=" $prefix   $suffix "
+  if [[ ${#barestring} -gt $COLUMNS ]]; then
+    warnline="${BOOMBAR_SHORTBAR:-$BOOMBAR_DEFAULT_SHORTBAR}"
+    local extraspaces=0
+    if [[ "$warnline" == "PREFIX" ]]; then
+      warnline=$prefix
+      [[ " ${BOOMBAR_PREFIX:-$BOOMBAR_DEFAULT_PREFIX} " =~ " BBMREMARK " ]] && extraspaces=2
+    elif [[ "$warnline" == "SUFFIX" ]]; then
+      warnline=$suffix
+      [[ " ${BOOMBAR_SUFFIX:-$BOOMBAR_DEFAULT_SUFFIX} " =~ " BBMREMARK " ]] && extraspaces=2
+    fi
+    linelen=$((COLUMNS - ${#warnline} - 2 - extraspaces)) # 2 for spaces on either side
+    BOOMBARCONTENT="$(printf '\033%s\033%s%*.*s' "$prefcolor $warnline " "$spacecolor" $linelen $linelen " ")"
+  fi
+
+	printf '\0337' # save the cursor location
+	  printf '\033[%d;%dH' "$LINES" 0 # move cursor to the bottom line
+	  printf '\033[0K' # clear the line
+
+    # Print bar if on correct line
+    read -sdR -p $'\E[6n' cursorpos
+    cursorpos=${cursorpos#*\[} # line;col
+    if [[ "${cursorpos%;*}" == "$((LINES - 1))" ]]; then boombar exit; boombar; fi
+    printf '%s' "$BOOMBARCONTENT" # print boombar
+
+	printf '\0338' # restore the cursor location
+  printf '\033[K' # clean up rest of line in case bar pooped itself
+}
+
+# Completion
+_boombar() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  local options
+  options=($(declare -f boombar | sed -ne '/^\s.*)$/ s/\s*\(.*\)_)/\1/p' | grep -v [*_] | grep -v env))
+
+  if [ "${#COMP_WORDS[@]}" == "2" ]; then
+    COMPREPLY=($(compgen -W "${options[*]}" -- $2));
+  fi
+}
+complete -F _boombar boombar
+
+# Reset state on source
+[[ -n "$BOOMBARSTATE" ]] && boombar exit
+

@@ -1,0 +1,399 @@
+#!/usr/bin/env bash
+
+# .boomrc alphabet extension for text to ascii
+
+###Function text2ascii
+# "\t${B}text2ascii${N} TEXT";
+# "\t\ttext2ascii will print a basic ascii version of input TEXT";
+# "\t\tthis command allows the equivalent functionality of \`chat /text\` in the cmd line";
+###
+text2ascii() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: text2ascii: command not found; return; fi
+  local word charidx
+  local firstline=()
+  local secondline=()
+  local thirdline=()
+  local font=$(echo Clean Ugly | xargs shuf -n1 -e)
+  for word in "${@}"; do
+      for charidx in $(seq 0 $((${#word}-1))); do
+          local char=${word:$charidx:1};
+          if [ -n "$(_text2ascii$font $char)" ]; then
+              firstline+=("$(_text2ascii$font $char | sed -n 1p)");
+              secondline+=("$(_text2ascii$font $char | sed -n 2p)");
+              thirdline+=("$(_text2ascii$font $char | sed -n 3p)");
+          else
+              firstline+=(" ");
+              secondline+=("$char");
+              thirdline+=(" ");
+          fi;
+      done;
+      firstline+=(" ");
+      secondline+=(" ");
+      thirdline+=(" ");
+  done;
+  echo "${firstline[@]}";
+  echo "${secondline[@]}";
+  echo "${thirdline[@]}";
+}
+
+_text2asciiClean() {
+  case $1_ in
+    A_) ;&
+    a_)
+      echo "   "
+      echo "|\\ "
+      echo "|-\\"
+    ;;
+    B_) ;&
+    b_)
+      echo "___"
+      echo "|_/"
+      echo "|_\\"
+    ;;
+    C_) ;&
+    c_)
+      echo "___"
+      echo "|  "
+      echo "|__"
+    ;;
+    D_) ;&
+    d_)
+      echo "__ "
+      echo "| \\"
+      echo "|_/"
+    ;;
+    E_) ;&
+    e_)
+      echo "___"
+      echo "|_ "
+      echo "|__"
+    ;;
+    F_) ;&
+    f_)
+      echo "___"
+      echo "|_ "
+      echo "|  "
+    ;;
+    G_) ;&
+    g_)
+      echo "___ "
+      echo "| __"
+      echo "|__|"
+    ;;
+    H_) ;&
+    h_)
+      echo "   "
+      echo "|_|"
+      echo "| |"
+    ;;
+    I_) ;&
+    i_)
+      echo "___"
+      echo " | "
+      echo "_|_"
+    ;;
+    J_) ;&
+    j_)
+      echo "___"
+      echo " | "
+      echo "\/ "
+    ;;
+    K_) ;&
+    k_)
+      echo "  "
+      echo "|/"
+      echo "|\\"
+    ;;
+    L_) ;&
+    l_)
+      echo "   "
+      echo "|  "
+      echo "|__"
+    ;;
+    M_) ;&
+    m_)
+      echo "    "
+      echo "|\/|"
+      echo "|  |"
+    ;;
+    N_) ;&
+    n_)
+      echo "    "
+      echo "|\ |"
+      echo "| \|"
+    ;;
+    O_) ;&
+    o_)
+      echo "____"
+      echo "|  |"
+      echo "|__|"
+    ;;
+    P_) ;&
+    p_)
+      echo "__"
+      echo "|/"
+      echo "| "
+    ;;
+    Q_) ;&
+    q_)
+      echo "___"
+      echo "| |"
+      echo "|_\\"
+    ;;
+    R_) ;&
+    r_)
+      echo "__"
+      echo "|/"
+      echo "|\\"
+    ;;
+    S_) ;&
+    s_)
+      echo " __ "
+      echo "|__ "
+      echo " __|"
+    ;;
+    T_) ;&
+    t_)
+      echo "___"
+      echo " | "
+      echo " | "
+    ;;
+    U_) ;&
+    u_)
+      echo "    "
+      echo "|  |"
+      echo "|__|"
+    ;;
+    V_) ;&
+    v_)
+      echo "    "
+      echo "\  /"
+      echo " \/ "
+    ;;
+    W_) ;&
+    w_)
+      echo "      "
+      echo "\    /"
+      echo " \/\/ "
+    ;;
+    X_) ;&
+    x_)
+      echo "  "
+      echo "\/"
+      echo "/\\"
+    ;;
+    Y_) ;&
+    y_)
+      echo "  "
+      echo "\/"
+      echo "/ "
+    ;;
+    Z_) ;&
+    z_)
+      echo "___"
+      echo " / "
+      echo "/__"
+    ;;
+    ,_)
+      echo " "
+      echo " "
+      echo "/"
+    ;;
+    \'_)
+      echo "\\"
+      echo " "
+      echo " "
+    ;;
+    !_)
+      echo " "
+      echo "|"
+      echo "."
+    ;;
+    \?_)
+      echo " "
+      echo "]"
+      echo "."
+    ;;
+  esac
+}
+
+_text2asciiUgly() {
+  case $1_ in
+    A_) ;&
+    a_)
+      echo "|  "
+      echo "|\ "
+      echo "|-\\"
+    ;;
+    B_) ;&
+    b_)
+      echo "+~\\"
+      echo "|-<"
+      echo "+_/"
+    ;;
+    C_) ;&
+    c_)
+      echo "+~~"
+      echo "|  "
+      echo "+__"
+    ;;
+    D_) ;&
+    d_)
+      echo "|\\ "
+      echo "| |"
+      echo "|_/"
+    ;;
+    E_) ;&
+    e_)
+      echo "+--"
+      echo "|- "
+      echo "|__"
+    ;;
+    F_) ;&
+    f_)
+      echo "+~~"
+      echo "|~ "
+      echo "|  "
+    ;;
+    G_) ;&
+    g_)
+      echo "+~|"
+      echo "| _"
+      echo "+_|"
+    ;;
+    H_) ;&
+    h_)
+      echo "| |"
+      echo "|-|"
+      echo "| |"
+    ;;
+    I_) ;&
+    i_)
+      echo "-+-"
+      echo " | "
+      echo "_|_"
+    ;;
+    J_) ;&
+    j_)
+      echo "~+~"
+      echo " | "
+      echo "\/ "
+    ;;
+    K_) ;&
+    k_)
+      echo "| /"
+      echo "|< "
+      echo "| \\"
+    ;;
+    L_) ;&
+    l_)
+      echo "|  "
+      echo "|  "
+      echo "|__"
+    ;;
+    M_) ;&
+    m_)
+      echo "\ /"
+      echo "|v|"
+      echo "| |"
+    ;;
+    N_) ;&
+    n_)
+      echo "|\\ |"
+      echo "| \\|"
+      echo "|  |"
+    ;;
+    O_) ;&
+    o_)
+      echo "|~~|"
+      echo "|  |"
+      echo "|__|"
+    ;;
+    P_) ;&
+    p_)
+      echo "+~\\"
+      echo "| /"
+      echo "|  "
+    ;;
+    Q_) ;&
+    q_)
+      echo "+~+"
+      echo "| |"
+      echo "+_\\"
+    ;;
+    R_) ;&
+    r_)
+      echo "+~\\"
+      echo "|+ "
+      echo "| \\"
+    ;;
+    S_) ;&
+    s_)
+      echo "+~~"
+      echo "+-+"
+      echo "__+"
+    ;;
+    T_) ;&
+    t_)
+      echo "~+~"
+      echo " | "
+      echo " | "
+    ;;
+    U_) ;&
+    u_)
+      echo "| |"
+      echo "| |"
+      echo "+_+"
+    ;;
+    V_) ;&
+    v_)
+      echo "| |"
+      echo "| |"
+      echo " v "
+    ;;
+    W_) ;&
+    w_)
+      echo "| |"
+      echo "|||"
+      echo "\|/"
+    ;;
+    X_) ;&
+    x_)
+      echo "\ /"
+      echo " x "
+      echo "/ \\"
+    ;;
+    Y_) ;&
+    y_)
+      echo "\ /"
+      echo " v "
+      echo " | "
+    ;;
+    Z_) ;&
+    z_)
+      echo "~~+"
+      echo " / "
+      echo "/__"
+    ;;
+    ,_)
+      echo " "
+      echo " "
+      echo "/"
+    ;;
+    \'_)
+      echo "\\"
+      echo " "
+      echo " "
+    ;;
+    !_)
+      echo "+~+"
+      echo "\_/"
+      echo " o "
+    ;;
+    \?_)
+      echo "/~\\"
+      echo "  /"
+      echo " ? "
+    ;;
+  esac
+}

@@ -1,0 +1,66 @@
+#!/usr/bin/env bash
+
+# Holiday boom emojis
+
+year=$(TZ=$BOOMTZ date +%Y)
+month=$(TZ=$BOOMTZ date +%m)
+day=$(TZ=$BOOMTZ date +%d)
+
+##########################
+### 🦃 Thanksgiving 🦃 ###
+##########################
+
+# Calculate the day of week of the 1st day of Nov between 0 and 6
+# 0=Sun, 1=Mon, ...
+firstdayofnov=$(date -d "${year}-11-1" +%w)
+firstthursofnov=$(( (11 - $firstdayofnov) % 7 + 1 ))
+
+# We want from Monday before Monday before thanksgiving thru thanksgiving day
+thxrange_start=$(( $firstthursofnov + 11 ))
+thxrange_end=$(( $firstthursofnov + 21 ))
+
+if [[ "$month" == "11" && $day -ge $thxrange_start && $day -le $thxrange_end ]]; then
+  _BE_BOOM="🍁"
+  _BE_HOLE="🧺"
+  # no _BE_BOT
+  _BE_SUPER="🌾"
+  _BE_HOG="🦃"
+  _BE_IMPORT="🍽️"
+  _BE_EXPORT="🥧"
+  _BE_CHECK="🍴"
+fi
+unset firstdayofnov firstthursofnov thxrange_start thxrange_end
+
+######################
+### 🎅 December 🎅 ###
+######################
+
+# All of december except NYE is holiday themed
+if [[ "$month" == "12" && "$day" != "31" ]]; then
+  _BE_BOOM="🎁"
+  _BE_HOLE="🪨"
+  _BE_BOT="🎅"
+  _BE_SUPER="❄️"
+  _BE_HOG="🦌"
+  _BE_IMPORT="🎄"
+  _BE_EXPORT="🛷"
+  _BE_CHECK="🧱"
+fi
+
+######################
+### 🎆 New Year 🎆 ###
+######################
+
+if [[ "$month" == "01" && $day -le 7 ]]; then
+  _BE_BOOM="🎇"
+  # no _BE_HOLE
+  _BE_BOT="🕺"
+  # no _BE_SUPER
+  # no _BE_HOG
+  _BE_IMPORT="🥂"
+  _BE_EXPORT="🍾"
+  _BE_CHECK="🎆"
+fi
+
+unset year month day
+

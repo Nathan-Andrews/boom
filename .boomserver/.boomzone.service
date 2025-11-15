@@ -1,0 +1,15 @@
+[Unit]
+Description=BOOM zone
+After=network.target
+
+[Service]
+User=<USER>
+Group=<USER>
+WorkingDirectory=<TL_BOOMINSTALL>/.boomserver/
+ExecStart=python3 .boombackend.py
+Restart=always
+StandardOutput=null
+
+[Install]
+WantedBy=multi-user.target
+

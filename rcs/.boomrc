@@ -1,0 +1,2666 @@
+#!/usr/bin/env bash
+
+# BOOM rc #
+# This is a morale boost tool that can be used to track productivity, introduce people to new commands, and create excitement in the work environment #
+
+# Patch Notes:
+# 0.X.X  - terminal emojis found, boommeter developed
+# 1.0.0  - initial _boommeter randomization setup complete, file sourceable from anywhere
+# 1.0.1  - update to not use slashes in sed cmds and not randomly rank cmds with [./!]
+# 1.0.2  - boomavg now takes a filter arg
+# 1.0.3  - random boom streak implementation
+# 1.0.4  - boomavg bug fix and more detailed intro text, type `boomhelp` for intro text anytime
+# 1.1.0  - add `boom` command for tracking per-user command rankings & hall of boom for random 6 hits
+# 1.1.1  - set boom files to 644 with chmod on source
+# 1.1.2  - bug fix with space after "^ $1" in sed commands
+# 1.1.3  - boom drought and other bug fixes/improvements
+# 1.1.4  - doom stops boom drought and `doomnow` clears as well, no commands work when doomed
+# 1.1.5  - boom drought output frequency adjusted, drought record tracking established
+# 1.1.6  - boom avg and boomavg tab completion
+# 1.1.7  - view patch notes with `boom patchnotes`
+# 1.1.8  - `boom board full` added to not restrict leaderboard to commands only boomed by multiple users
+# 1.1.9  - boommeter command rankings are saved to a log and displayed on the site
+# 1.1.10 - `boom chat` allows posting chat to website - `chat` alias also works
+# 1.1.11 - `chat` added to HISTIGNORE so `chat` is not saved in history
+# 1.1.12 - boomhog streaks should persist between terminals
+# 1.2.0  - boom chat development complete, `boom chat clear` saves off log and clears chats from site
+# 1.2.1  - fix boom streak bug and improve help text
+# 1.2.2  - fix doomnow chat clear
+# 1.2.3  - `chat cipher` and `chat decipher` added
+# 1.2.4  - `chat decipher` takes number input for how many lines to decode
+# 1.2.5  - `chat` can now boom without bugging but also while still being ignored by history
+# 1.2.6  - `chat clear` starts new chat with message containing who reset log
+# 1.2.7  - quotes filtered out of chat cipher - look out for future chars that break cipher to filter
+# 1.2.8  - first pass at mentions - completion to come
+# 1.2.9  - fix user glitch and add @ completion to chat mentions
+# 1.2.10 - can mention @everyone in boom chat
+# 1.2.11 - chat cipher now supports mentions
+# 1.2.12 - `boom drought rarity [NUM]` added
+# 1.3.0  - chat commands implemented with completion - `chat /help` for cmd list
+# 1.3.1  - 1 booms is bad grammar - checks for plurals now - yeah, we're grammarphiles
+# 1.3.2  - `chat /roast` implemented
+# 1.3.3  - `chat /roast` completion implemented
+# 1.3.4  - chat roasts work with @ mentions
+# 1.3.5  - more roasts added
+# 1.3.6  - check current patch with `chat /patch` and maybe roast if on an old version
+# 1.3.7  - fix bug with mentioning .sa accounts
+# 1.3.8  - users can mention BoomBot in chat for a boom rating
+# 1.3.9  - /work command added for you slackers
+# 1.3.10 - /total command added to see total booms easily without updating freq board
+# 1.3.11 - `boom todo` to show feature roadmap
+# 1.3.12 - starts doomed if boomfiles aren't writable
+# 1.3.13 - boom hall bug fix (also 6 has been hit now)
+# 1.3.14 - boom quests are active - a random command boomed by 3+ people can now award x2 the booms!
+# 1.4.0  - SUPER boom multipliers active - score landscape has changed
+# 1.4.1  - /total [PERSON] implemented
+# 1.4.2  - boom quest re-rolls every day
+# 1.4.3  - bug fixes worthy of a patch - some math and path fixes
+# 1.4.4  - `boom total` added to view totals outside of chat
+# 1.4.5  - freq board has totals
+# 1.4.6  - boom boss and boom admins added
+# 1.4.7  - /timeout added but no handling
+# 1.4.8  - timeouts active and working
+# 1.4.8  - bang alias can be used in chat with $(bang)
+# 1.4.9  - `boombot` starts boombot mode and `boombot exit` leaves it - more to come there
+# 1.4.10 - `doom` and `doomnow` handle boombot mode cases and `doombot` added as alias for `boombot exit`
+# 1.4.11 - `bang [NUM]` is now a fxn that prints NUM bangs (default 1)
+# 1.4.12 - BoomBot only refers to self as BoomBot
+# 1.4.13 - freq board aligned to 3 digit freqs - tuckerdc's vim won the race to 100 random
+# 1.5.0  - boombot mode development complete
+# 1.5.1  - `boom silent` will suppress all _boommeter output without removing boom fxns when silence desired, not doom
+# 1.5.2  - early `chat /hype` implementation, need more hype up phrases, boombot can only award 1 super boom daily
+# 1.5.3  - chat hype options filled out more
+# 1.5.4  - boom drought output suppression feature removed in favor of boom silent
+# 1.5.5  - boomdocs implemented to deprecate boom help and boomhelp - future commands will be documented here
+# 1.5.6  - boomdocs completion
+# 1.5.7  - boom total full and boom chat /total all added w/ completion - full and all are now interchangable in cmds
+# 1.5.8  - boombot auto mode option added such that users can automatically optimize boombot super boom farming
+# 1.5.9  - `boom favorite` added with completion, daily re-roll, and odds reduction for favorite
+# 1.5.10 - boombot doesn't roast its favorite!
+# 1.5.11 - bug fixes with daily resets for AUTOBOOMBOT and favorite
+# 1.5.12 - boombot mode handles cases where _boombotName doesn't exist - e.g. PS1 is passed thru ssh
+# 1.6.0  - emojis are in chat!
+# 1.6.1  - emoji completion parsing only shows named options - bug fix
+# 1.6.2  - more emojis in list
+# 1.6.3  - `boom favorite entries` added to show current state of entries for favorite drawing
+# 1.6.4  - boom favorite entry max expanded to 8
+# 1.6.5  - update chat to check for timeout in case first cmd after timeout is chat
+# 1.6.6  - chat timeout cmd shows current timeouts and remaining duration
+# 1.6.7  - boombot mode prompt configurable, autoboombot mode no longer prevents entering boombot mode
+# 1.6.8  - boombot completion
+# 1.6.9  - boomzone and doomsite added and integrated into doom/doomnow - doomnow only adds clear now, doesn't clear chat
+# 1.6.10 - `boom zone` support added
+# 1.6.11 - `chat edit` added but not docced or completed
+# 1.6.12 - deprecated doomnow, doom will now clear terminal
+# 1.6.13 - chat edit completion implemented - 4th arg will complete with what current 3rd arg is for ez typo fixes
+# 1.6.14 - edit has documentation
+# 1.6.15 - admin/boss/host are readonly now
+# 1.7.0  - `chat /ascii` is here with completion and validation and documentation
+# 1.7.1  - chat /ascii completion defaults to filepaths when no ~/ascii dir exists
+# 1.7.2  - boombot reacts to ascii
+# 1.7.3  - boommeter random hits just ignore super problematic characters altogether - can still boom scripts without logging
+# 1.7.4  - `chat /boomstoday` added to list current boom standings per day based on favorite entry list
+# 1.7.5  - no emojis in chat /ascii
+# 1.7.6  - `chat /text` added but not documented
+# 1.7.7  - more alphabet ascii added, /text and /boomstoday docced, /text has length validation, bug fixes with fav entries
+# 1.7.8  - alphabet implementation has moved to its own rc instead of a local dir with ascii files - much better
+# 1.7.9  - new font and random font output for text2ascii
+# 1.7.10 - ascii chars are enforced correctly in /ascii command
+# 1.7.11 - boombot can be mentioned in cipher and will respond in cipher
+# 1.7.12 - fixed -$- evaluating as -himBHs in chat emoji completion
+# 1.7.13 - doom persists now - all terminals will clear after dooming in one and bringtheboom after booming in one
+# 1.7.14 - `boom board today`/`boomstoday` added and documented
+# 1.7.15 - default timeout set - shortened to 15 minutes from 30
+# 1.7.16 - BOOMBOTPROMPTCMD is able to run commands in the boombot mode prompt
+# 1.7.17 - `boomstoday` bugfix - was checking wrong file for if anyone had boomed
+# 1.7.18 - HISTIGNORE append fix - chat was getting added infinitely
+# 1.7.19 - running chat no longer allows booming on first empty line in other tabs
+# 1.7.20 - chat /ascii completion implemented with -o default because that's better
+# 2.0.0  - boomssh/exec/su released and chainable/completeable/documented
+# 2.0.1  - quest eligibility changed such that a command is eligible for quest selection if more than half+1 users have boomed it
+# 2.0.2  - boomzone now alias for boom zone instead of vice-versa, and zone command can show site columns in terminal
+# 2.0.3  - csplit/chain import handling allows one universal log for all boomssh/exec sessions, handling updated to avoid lingering logs
+# 2.0.4  - boomsu remembers calling UID/GID and chowns if it has to restart the session
+# 2.0.5  - users can no longer run boomsu while boomsued
+# 2.0.6  - .sessionlog populating grep will filter out binary file matches (weird bug)
+# 2.0.7  - boom total mult rewards will no longer falsely super boom a command that won't log towards the total ([!./]+)
+# 2.0.8  - fix for persistent doom where handling is disabled if file is not writable - hosts without write permission were auto-bringthebooming
+# 2.0.9  - doom for boomsessions is separate from "big doom" && boomsession can be used on hosts with home dir but wrong permissions
+# 2.0.10 - boom board calculation was counting numbers from commands, fixed that... also fixed passing 25 milestone on import
+# 2.0.11 - `boom patchnotes latest [NUM]` added to avoid printing 123 lines in the terminal
+# 2.0.12 - unset dbus session bus address in boomexec just in case
+# 2.1.0  - new chart just dropped - `boom board top` to see top booms per user
+# 2.1.1  - text after NUM in chat /rarity call is ignored
+# 2.1.2  - boomsessions will skip empty exports instead of exporting nothing then skipping empty imports
+# 2.2.0  - `boombar` released with boombot mode integration and basic boom/drought display options
+# 2.2.1  - boom favorite is smarter about when nobody has boomed in a day
+# 2.2.2  - fixes for persistent doom (it messed up more than we thought)
+# 2.2.3  - boomlog filtering wasn't actually filtering (scary)... fixed the regex to match for ^[^<bad chars>]+$
+# 2.2.4  - boomdocs doesn't read the docs if doomed, instead gives hint to `bringtheboom`
+# 2.2.5  - BOOMFAV and LASTUSERBOOM added to boombar env
+# 2.2.6  - boombot will randomly remark in chat
+# 2.2.7  - boomrc suite uses $USER shell builtin instead of $(whoami)
+# 2.2.8  - `boombot env` supported, inspired by `boombar env`
+# 2.2.9  - MAJOR BUGFIX - boommeter can now tell if calling line was empty... this is huge for removing erroneous empty-line booms in multi-term env
+# 2.2.10 - fix bug with boomsu histignore handling, modify chat in histignore to chat* instead of chat *
+# 2.2.11 - if container defaults to root user, don't enable boomsu
+# 2.2.12 - added DROUGHTRATIO_CPM to boobmar env
+# 2.2.13 - boomsess works on pre bash 4.4, but not happy about it... boomrc requires bash from the past decade but can't force containers to have that
+# 2.2.14 - boombar is more resistant to window resizing
+# 2.2.15 - boombar handles when prefix/suffix size exceeds window size
+# 2.2.16 - boombar env now includes BTODAY args for today's booms for $USER and today's leaderboard top 3 names/numbers
+# 2.2.17 - boombar is finally documented
+# 2.2.18 - BOOMPATCH can be shown in boombar
+# 2.2.19 - drought rarity now takes "fav" arg
+# 2.2.20 - calls to bc use here strings now instead of echo with a pipe
+# 2.2.21 - boom board can be called with CMD or help now
+# 2.3.0  - `boom env` added but not documented
+# 2.3.1  - DROUGHT WATCH print added to boom log
+# 2.3.2  - board, env, patchnotes, and drought all have semi-hidden help subarg that will print out boomdocs from case without saying error on the arg
+# 2.3.3  - boom env adds docs alias
+# 2.3.4  - boombar/bot env are now boombar/bot conf externally to not be confused with new boom env and upcoming chat env
+# 2.3.5  - `chat env` added but not documented
+# 2.3.6  - chat env can handle CIPHER, EDITED, ASCII tags and print out chats since last chat into env
+# 2.3.7  - zone chat uses same chat printer fxn as chat env that flips chat but not ascii, env cannot be at beginning of chat env chat
+# 2.3.8  - chat env supports emojis and chat can replace -emoji- strings if they weren't completed in terminal
+# 2.3.9  - chat env has basic hard-coded completion
+# 2.3.10 - chat env has full chat completion for all but emojis and mentions
+# 2.4.0  - chat env is full-featured with completion, commands, ascii, and mentions!
+# 2.4.1  - boombot chats when someone dooms/bringstheboom
+# 2.4.2  - `chat /corecarl` added
+# 2.4.3  - modulo 0 quest reroll stopped and /corecarl leading 0 removed, quest rerolls based on if quest file has been changed that day, not boom log
+# 2.4.4  - behavior change - drought defaults to just show your drought, `drought me` still supported but no longer in docs
+# 2.4.5  - bug fixes to boom suboptions completion when using chat cmds and boombot chatting on doom/bringtheboom
+# 2.4.6  - chat env completion completes from where the cursor is now
+# 2.4.7  - chat env completion spits out options on tab hit
+# 2.5.0  - migrate boom files to .config
+# 2.5.1  - add .boomconfig for customization outside of defaults - BOOMCFGFILE must be set when sourced
+# 2.5.2  - boombar initializes with BBMREMARK set if AUTOBOOMBOT turns boombot on
+# 2.5.3  - set BOOMTZ in config file so all machines are looking at local dates/times for date-related functionality
+# 2.5.4  - add config arguments to make boom installable/configurable for anyone
+# 2.5.5  - update boomdocs to have no bold option for readme generation
+# 2.5.6  - add boomdevrc with initial `boomdev commit` command attempt to automatically append current boomdocs to README.md
+# 2.5.7  - fix BOOMTZ to use timedatectl or /etc/localtime instead of date +%Z
+# 2.5.8  - chat env is fully featured, chat/boom env both documented
+# 2.5.9  - only check config if not site runner
+# 2.5.10 - complete with ssh completion function no matter what it's called for boomssh, fallback is complete -A hostname
+# 2.6.0  - `zone term` added to view an updating version of the site from a terminal
+# 2.6.1  - `board top NUM` now shows NUM top boomed commands
+# 2.6.2  - boom holiday update - optional .boomholidayrc provides holiday themed boom emojis!
+# 2.6.3  - boom emojis entirely customizable - boom conf added but not in docs
+# 2.6.4  - boom roasts and hypes customizable in BOOMCFGFILE
+# 2.6.5  - `boom conf` command documented
+
+DOOMBOOM=
+# Multiple ways to have this set:
+#   - Have users source file that sets it and then sources this (recommended)
+#   - Have users set it to point to boss'  config before sourcing
+#   - Have users set it to point to user's config before sourcing (careful)
+#   - Set it here in the file so users can just source this file
+if [ -z "$BOOMSITERUNNER" ]; then
+  if [[ -n "$BOOMCFGFILE" && -f "$BOOMCFGFILE" ]]; then
+    source $BOOMCFGFILE
+  elif [[ -n "$BOOMCFGFILE" ]]; then
+    echo -n '' > $BOOMCFGFILE
+    echo $BOOMCFGFILE generating...
+  else
+    echo "BOOMCFGFILE not set - using defaults for now"
+    BOOMCFGFILE="${XDG_DATA_HOME:-$HOME/.local/share}/boom/.boomconfig"
+    mkdir -pv ${BOOMCFGFILE%/*}
+    echo -n '' > $BOOMCFGFILE
+    echo $BOOMCFGFILE generating - source .boomrc with BOOMCFGFILE=$BOOMCFGFILE to suppress warnings
+  fi
+
+  checkConfigArgs() {
+    : ${1?Error: checkConfigArgs called without ARG}
+    : ${2?Error: checkConfigArgs called for $1 without DEFAULT}
+
+    if [[ -f "$BOOMCFGFILE" && -z "${!1}" ]]; then
+      readonly $1="$2" &>/dev/null
+      echo "readonly $1=\"$2\" &>/dev/null" >> $BOOMCFGFILE
+      echo $1 not set - Defaulting to ${!1} - Change this in $BOOMCFGFILE
+    fi
+  }
+
+  # Use cfg defaults for boom globals if BOOMCFGFILE not set up
+  tmpconfig="${HOME%/$USER}"
+  checkConfigArgs BOOMUSERDIR "${tmpconfig#/}"
+  # When adding admins, run `setfacl -m u:<user>:rw <file>` for admin only files (timeout)
+  # Ensure mask is rw, change with `setfacl -m m::rw <file>`
+  checkConfigArgs BOOMADMINS  $USER
+  checkConfigArgs BOOMBOSS    $USER
+  tmpconfig="${XDG_DATA_HOME:-$HOME/.local/share}/boom"
+  checkConfigArgs BOOMINSTALL "${tmpconfig#$HOME/}"
+  tmpconfig="${XDG_CONFIG_HOME:-$HOME/.config}/boom/rcs"
+  checkConfigArgs BOOMRCS     "${tmpconfig#$HOME/}"
+  checkConfigArgs BOOMTZ      "$(timedatectl show -p Timezone --value 2>/dev/null || { readlink /etc/localtime | sed 's|.*zoneinfo/||'; })" # default to local time
+  checkConfigArgs BOOMCONTS   "sudo docker"
+  checkConfigArgs BOOMPORT    9029
+  checkConfigArgs BOOMSITE    "http://$HOSTNAME:$BOOMPORT"
+  checkConfigArgs BOOMSITECMD "firefox --new-tab"
+  unset tmpconfig
+else
+  source $BOOMCFGFILE
+fi
+
+AUTOBOOMBOT=
+_SILENTBOOM=no
+BOOMPREV_HISTCMD=$HISTCMD # int currrent cmd num in history
+readonly _BOOMDEFAULTTIMEOUT=900 &>/dev/null
+readonly BOOM_MAGICPROMPT='\#' &>/dev/null
+BOOMPREV_CMDNO=$(printf '%s' "${BOOM_MAGICPROMPT@P}")
+
+_BE_BOOM_DEF="💥"
+_BE_HOLE_DEF="🕳️"
+_BE_BOT_DEF="🤖"
+_BE_SUPER_DEF="⚡️"
+_BE_HOG_DEF="🐷"
+_BE_IMPORT_DEF="⬇️"
+_BE_EXPORT_DEF="⬆️"
+_BE_CHECK_DEF="✅"
+
+# Optional boom configuration files
+if [[ -r "/$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/optional/.boomholidayrc" && -z "$NOBOOMHOLIDAY" ]]; then
+  # Boom holiday emojis
+  source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/optional/.boomholidayrc
+fi
+
+[ -z "$_BE_BOOM" ] && _BE_BOOM="${BOOM_EMOJI:-$_BE_BOOM_DEF}"
+[ -z "$_BE_HOLE" ] && _BE_HOLE="${BOOM_HOLE:-$_BE_HOLE_DEF}"
+[ -z "$_BE_BOT" ] && _BE_BOT="${BOT_EMOJI:-$_BE_BOT_DEF}"
+[ -z "$_BE_SUPER" ] && _BE_SUPER="${SUPER_EMOJI:-$_BE_SUPER_DEF}"
+[ -z "$_BE_HOG" ] && _BE_HOG="${HOG_EMOJI:-$_BE_HOG_DEF}"
+[ -z "$_BE_IMPORT" ] && _BE_IMPORT="${IMPORT_EMOJI:-$_BE_IMPORT_DEF}"
+[ -z "$_BE_EXPORT" ] && _BE_EXPORT="${EXPORT_EMOJI:-$_BE_EXPORT_DEF}"
+[ -z "$_BE_CHECK" ] && _BE_CHECK="${CHECK_EMOJI:-$_BE_CHECK_DEF}"
+
+###Function bang
+# "\t${B}bang${N} [NUM]";
+# "\t\tbamg will print NUM (default 1) booms to the terminal!";
+# "\t\tthis is useful to run with \`chat \$(bang X)\` to put X booms in chat";
+###
+bang() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: bang: command not found; return; fi
+  for i in $(seq ${1:-1}); do echo -n $_BE_BOOM; done; echo;
+}
+
+_boomIntroTxt() {
+  if [[ "$DOOMBOOM" == "yes" && -n "$1" ]]; then echo bash: boomhelp: command not found; return; fi
+  if [ -z "$1" ]; then echo $_BE_BOOM Cousin Angelo, what\'s that smell???; fi
+  if [ -z "$1" ]; then echo $_BE_BOOM It\'s a piece of BOOM!!; fi
+  echo $_BE_BOOM Type \`bringtheboom\` to activate the boom meter
+  echo $_BE_BOOM Then, \`boommeter [THING]\` will rank THING on the boommeter!
+  if [ -z "$1" ]; then echo -e "\n$_BE_BOOM Random commands you run can be ranked as well! \`export PROMPT_COMMAND=_boommeter\` to activate!"; fi
+  if [ -z "$1" ]; then echo -e "$_BE_BOOM IMPORTANT: if \$PROMPT_COMMAND is already set in your env, use:\n\t[[ ! \"\$PROMPT_COMMAND\" =~ \"_boommeter\" ]] && PROMPT_COMMAND=\"_boommeter; \$PROMPT_COMMAND\"\n"; fi
+  echo $_BE_BOOM Type \`boomavg [CMD]\` to see the average values random commands received or that of one CMD
+  echo $_BE_BOOM If you just want to see some booms, \`bang [NUM]\` will print one or NUM for you - this is great in BOOM chat with \`chat \$\(bang NUM\)\`!
+  echo $_BE_BOOM Don\'t worry, the boommeter will be deactivated with a simple \`doom\` command
+  if [ -z "$1" ]; then echo $_BE_BOOM Add \`source ~$BOOMBOSS/.boomrc\` and \`PROMPT_COMMAND=_boommeter\` to your .bashrc to bring the BOOM!!; fi
+  if [ -z "$1" ]; then echo $_BE_BOOM Ensure the PROMPT_COMMAND line comes first in your .bashrc so that this doesn\'t print every time you start a terminal; fi
+  echo $_BE_BOOM To suppress random boom output by default, run \`boom silent \&\>/dev/null\` after sourcing .boomrc in your .bashrc
+  echo -e "\n$_BE_BOOM Type \`boom\` to use the boom cmd - a catch-all tool for boomuser functionalities"
+  echo -e "$_BE_BOOM \`boombot\` will put you into BoomBot mode - run commands here to share your booms with BoomBot and earn rewards!"
+  echo -e "$_BE_BOOM \`boombot exit\` or \`doombot\` will exit BoomBot mode"
+  echo -e "\n$_BE_BOOM If you haven't had a random boom in 45 commands, you will get a BOOM DROUGHT!"
+  echo $_BE_BOOM Look out for the ultra-rare 6 BIG BOOMS and the score-boosting SUPER BOOMS!
+  echo -e "\n$_BE_BOOM Type \`boomhelp\` to see this anytime and \`boomdocs\` for more thorough docs!"
+  if [ -n "$1" ]; then echo -e "$_BE_BOOM This help is no longer updated after patch 1.5.5, but is still here for boom setup information on first source"; fi
+}
+
+if [ ! -d "/$BOOMUSERDIR/$USER" ]; then echo -e "FATAL: Nothing will work - please stop booming\n\n"; export DOOMBOOM=yes; fi
+if [[ "/$BOOMUSERDIR/$USER/$BOOMINSTALL" != "$(echo -n ~/$BOOMINSTALL)" ]]; then export DOOMBOOM=yes; fi
+if [ ! -d /$BOOMUSERDIR/$USER/$BOOMINSTALL ]; then mkdir -p /$BOOMUSERDIR/$USER/$BOOMINSTALL &>/dev/null; fi
+if [ ! -w /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL ]; then export DOOMBOOM=yes; fi
+
+# Each dir to boominstall needs to be accessible by all users
+longpath=
+EXPECTED_BOOMINSTALL="/$BOOMUSERDIR/$USER/$BOOMINSTALL"
+for path in ${EXPECTED_BOOMINSTALL//\// }; do
+  if [[ ! " 777 755 " =~ " $(stat -c "%a" "$longpath/$path") " ]]; then
+    chmod 755 "$longpath/$path" || export DOOMBOOM=yes
+  fi
+  longpath+="/$path"
+done
+unset longpath EXPECTED_BOOMINSTALL
+
+case $HISTCONTROL in
+  *ignoreboth*) ;&
+  *ignorespace*)
+    if [ "$BOOMWARN" != "no" ]; then
+      echo boomrc: WARNING: ignoreboth or ignorespace in HISTCONTROL will cause bugged booms when running ignored commands
+      echo boomrc: Suppress this warning by sourcing with \`BOOMWARN=no source $BASH_SOURCE\`
+    fi
+  ;;
+esac
+
+_boomTracker=~/$BOOMINSTALL/.boomtracker
+_boomRankings=~/$BOOMINSTALL/.boomrankings
+_boomStreak=~/$BOOMINSTALL/.boomstreak
+_boomDrought=~/$BOOMINSTALL/.boomdrought
+_boomNotify=~/$BOOMINSTALL/.boomnotify
+_boomBotModeBooms=~/$BOOMINSTALL/.bbmdailybooms
+_doomTracker=~/$BOOMINSTALL/.doomtracker
+_boomUsers=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomusers
+_boomHoF=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomhall
+_boomUserLog=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomlog
+_boomDroughtRecord=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomdroughtrecord
+_boommeterLog=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boommeterlog
+_boomQuest=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomquest
+_boomTimeout=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtimeout
+_boomFavor=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomfavor
+_boomEmojis=~/$BOOMINSTALL/.boomemojis
+_boomEmojiSource=/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomemojis
+[[ ! " $HISTIGNORE " =~ " chat* " ]] && export HISTIGNORE="${HISTIGNORE:+$HISTIGNORE:}chat*"
+if [[ -e "$_boomUsers" &&  ! " $(cat $_boomUsers | xargs) " =~ " $USER " ]]; then
+  echo " $USER" >> $_boomUsers
+fi
+if [[ -e "$_boomDroughtRecord" && ! " $(cat $_boomDroughtRecord | xargs) " =~ " $USER " ]]; then
+  echo " $USER 0" >> $_boomDroughtRecord
+fi
+if [[ ! -f "$_boomTracker" ]]; then
+  echo "" > $_boomTracker
+fi
+if [[ ! -f "$_boomStreak" ]]; then
+  echo -n "" > $_boomStreak
+fi
+if [ ! -f "$_boomDrought" ]; then
+  echo -n "0" > $_boomDrought
+fi
+if [ ! -f "$_boomNotify" ]; then
+  echo -n "" > $_boomNotify
+fi
+if [[ ! -f "$_boomBotModeBooms" ]]; then
+  echo -n "0" > $_boomBotModeBooms
+fi
+if [ -f "$_boomRankings" ]; then
+  \chmod 644 $_boomRankings &>/dev/null
+  [ ! -w "$_boomRankings" ] && export DOOMBOOM=yes
+fi
+
+# Implementation of emojis in boom chat
+# Uses emoji master list copied to home at source time (for speed)
+if [ "$USER" != "$BOOMBOSS" ]; then
+  if [ -r "$_boomEmojiSource" ]; then
+    \cp -f $_boomEmojiSource $_boomEmojis
+  else
+    echo $_BE_BOOM F09F92A5 -boom-> $_boomEmojis
+  fi
+fi
+
+# BOOM Import from ssh or container
+_boomImports=~/$BOOMINSTALL/.boomimport
+if [ ! -d $_boomImports ]; then \mkdir -p $_boomImports &>/dev/null; fi
+\chmod 777 $_boomImports &>/dev/null
+_boomSession=$_boomImports/.sessionlog
+_boomImportReady=$_boomImports/.import
+if [ ! -f $_boomSession ]; then echo -n "" > $_boomSession; \chmod 644 $_boomSession &>/dev/null; fi
+
+[ ! -w "$_boomTracker" ] && export DOOMBOOM=yes
+[ ! -w "$_boomStreak" ] && export DOOMBOOM=yes
+[ ! -w "$_boomDrought" ] && export DOOMBOOM=yes
+[ ! -w "$_boomBotModeBooms" ] && export DOOMBOOM=yes
+
+# Handle doom state - if something above failed, write to persistent doom if able
+if [[ ! -f "$_doomTracker" ]]; then echo -n "$DOOMBOOM" > $_doomTracker
+elif [[ -n "$DOOMBOOM" && -w "$_doomTracker" ]]; then echo -n yes > $_doomTracker
+elif [[ -z "$DOOMBOOM" && -z "$BOOMSITERUNNER" ]]; then DOOMBOOM=$(cat $_doomTracker)
+fi
+[ ! -w "$_doomTracker" ] && export DOOMBOOM=yes
+
+\chmod 644 $_boomStreak $_boomTracker $_boomDrought $_boomBotModeBooms $_boomEmojis $_doomTracker &>/dev/null
+\chmod 777 ~/$BOOMINSTALL $_boomNotify &>/dev/null
+
+_boommeter() {
+  BOOM_CMDNO=$(printf '%s' "${BOOM_MAGICPROMPT@P}")
+  if [[ "$_SILENTBOOM" == "yes" ]]; then _boommeterrunner &>/dev/null; return
+  else _boommeterrunner; fi
+
+  # Doom if doomed elsewhere - persistent doom
+  if [[ -w "$_doomTracker" && "$(cat $_doomTracker)" != "$DOOMBOOM" ]]; then if [[ "$(cat $_doomTracker)" =~ "yes" ]]; then clear; else export AUTOBOOMBOT=; echo $_BE_BOOM$_BE_BOOM WE BRING THE BOOM $_BE_BOOM$_BE_BOOM; fi; DOOMBOOM=$(cat $_doomTracker); fi
+
+  _handle_autoboombot
+
+  # Handle features from other boom rc files
+  if [[ "$DOOMBOOM" != "yes" ]]; then
+    # boomsession imports
+    if declare -f _checkForBoomImports &>/dev/null; then _checkForBoomImports; fi
+    # boombar update
+    if [[ -n "$BOOMBARSTATE" ]] && declare -f _boombarupdate &>/dev/null; then _boombarupdate; fi
+  fi
+  BOOMPREV_HISTCMD=$HISTCMD
+  BOOMPREV_CMDNO=$BOOM_CMDNO
+}
+_handle_autoboombot() {
+  if [[ "$DOOMBOOM" != "yes" && "$AUTOBOOMBOT" == "yes" ]]; then
+    if [[ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomBotModeBooms) +%d)" != "$(TZ=$BOOMTZ date +%d)" ]]; then
+      if [[ "$BOOMBOTMODE" != "yes" ]]; then
+        echo Automatically starting boombot mode
+        _boombot
+      fi
+      return
+    fi
+    if [[ "$BOOMBOTMODE" != "yes" && ! " -1 -2 " =~ " $(cat $_boomBotModeBooms) " ]]; then
+      echo Automatically starting boombot mode
+      _boombot
+    elif [[ "$BOOMBOTMODE" == "yes" && " -1 -2 " =~ " $(cat $_boomBotModeBooms) " ]]; then
+      _boombot exit
+      echo Automatically exited boombot mode
+    fi
+  fi
+}
+_boommeterrunner() {
+  # This magic skips empty lines
+  # Skips 0 to preserve legacy (pre-2.2.9) "feature" of booming on terminal start
+  if [[ $BOOM_CMDNO -ne 0 && $BOOM_CMDNO -eq $BOOMPREV_CMDNO ]]; then return; fi
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+
+  local cmd=$(HISTTIMEFORMAT= history | tail -n 1 | awk '{print $2}')
+  local lasttimeout=$(sed -ne "/$USER/ s/$USER //p" $_boomTimeout | tail -n 1)
+  export BOOMTIMEDOUT=$([ $(($(TZ=$BOOMTZ date -u +%s)-${lasttimeout:-0})) -le $_BOOMDEFAULTTIMEOUT ] && echo yes || echo no)
+
+  # This is here because chat is in HISTIGNORE
+  if [[ "$(cat $_boomTracker)" =~ ^"_chat"$ ]]; then
+    cmd=chat
+  elif [[ "$(cat $_boomTracker)" =~ ^"chat"$ && "$BOOMPREV_HISTCMD" == "$HISTCMD" ]]; then
+    # Need this check bc chat is in HISTIGNORE
+    # This ensures a new command has been run
+    return
+  fi
+
+  # Repeated commands are not boomable
+  # Brief history of why:
+  #   Before patch 2.2.9, the last command was tracked by history alone
+  #   This meant that empty lines needed to be filtered by checking boomTracker
+  #   Now, empty lines are filtered out with BOOM_CMDNO and '\#' prompt evaluation
+  #   So, is boomTracker useless? Nope! boomTracker now serves the purpose of handling multi-terminal setups
+  #   If a command is run anywhere on a machine by the user, the command previously run in the current session
+  #    is eligible again, and boomTracker helps keep track of that
+  #   Ultimately, repeated commands could be boomable now, but they aren't because of developer preference
+  if [[ "$(cat $_boomTracker)" == "$cmd" ]]; then return; fi
+  if [ -n "$cmd" ]; then
+    echo $cmd > $_boomTracker
+
+    local boomrandomizer=$(( $RANDOM % 15 + 1 ))
+    [[ "$USER" == "$(sed -n 1p $_boomFavor)" ]] && boomrandomizer=$(( $RANDOM % 10 + 1 ))
+    if [ $boomrandomizer -eq 7 ]; then
+      boommeter $cmd _log
+      local deaddrought=$(cat $_boomDrought)
+      echo -n "0" > $_boomDrought
+      local currentrec=$(cat $_boomDroughtRecord | grep $USER | awk '{print $2}')
+      if [[ "$deaddrought" -gt "$currentrec" ]]; then
+        sed -i -e "s/^ $USER $currentrec$/ $USER $deaddrought/" $_boomDroughtRecord
+      fi
+
+      if [ -w $_boomFavor ]; then
+        # Reroll favorite each day
+        if [ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomFavor) +%d)" != "$(TZ=$BOOMTZ date +%d)" ]; then
+          local countuser
+          local newfav=$(
+          while read line; do
+            read -ra countuser <<< $line
+            for i in $(seq ${countuser[0]}); do
+              echo -n " ${countuser[1]}";
+            done
+          done < <(sed -n "2s/ /\n/gp" $_boomFavor | \grep [a-z] | sort | uniq -c | sed -e 's/[8-9"]/8/' -e 's/\([0-9]\)\{2,\}/8/g') |
+          xargs shuf -n1 -e)
+          echo -e "$newfav\n $USER" > $_boomFavor
+          echo boombot: $_BE_BOT BoomBot\'s favorite user today is $newfav! >> $_boommeterLog
+        else
+          # Add entry for favor drawing
+          sed -i "2 s/$/ $USER/" $_boomFavor
+        fi
+      fi
+    else
+      echo -n $(($(cat $_boomDrought)+1)) > $_boomDrought
+      if [[ "$(cat $_boomDrought)" -ge "45" && "$(($(cat $_boomDrought) % 5))" == "0" ]]; then
+        echo "$_BE_HOLE$_BE_HOLE$_BE_HOLE BOOM DROUGHT! You haven't had a random boom in $(cat $_boomDrought) commands! $_BE_HOLE$_BE_HOLE$_BE_HOLE"
+      elif [[ "$(cat $_boomDrought)" -eq "40" ]]; then
+        echo "$_BE_HOLE🚨$_BE_HOLE DROUGHT WATCH! $USER is on course for a drought! $_BE_HOLE🚨$_BE_HOLE" >> $_boomUserLog
+      fi
+    fi
+    if [[ "$BOOMBOTMODE" == "yes" ]]; then
+      local remark=$(_bbmRemark $cmd)
+      if [ -n "$BOOMBARSTATE" ]; then
+        declare -f _boombarenv &>/dev/null && _boombarenv BBMREMARK "${remark//" $_BE_HOLE"}"
+      else
+        echo $remark
+      fi
+    fi
+    if [[ $(( $RANDOM % 150 )) -eq 25 ]]; then
+      echo boombot: $(_bbmRemark $cmd | sed -e "s/your/$USER's/g" -e "s/you/$USER/g") >> $_boommeterLog
+    fi
+  fi
+  if [ -n "$(cat $_boomNotify)" ]; then
+    cat $_boomNotify | tail -n 2
+    echo -n "" > $_boomNotify
+  fi
+}
+
+###Function boommeter
+# "\t${B}boommeter${N} THING";
+# "\t\tthis function ranks THING on the boommeter!";
+###
+boommeter() {
+  # Single test for if this is a _log run
+  local logrun=false
+  [[ "$2" == "_log" ]] && logrun=true
+
+  # If command includes super problematic chars just exit
+  if $logrun && [[ "$1" =~ [![]+ ]]; then return; fi
+
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: boommeter: command not found; return; fi
+  # Adapted from Josh
+  if [ -z "$1" ]; then
+    echo "Give us something to rank on the boom meter!"
+    return 1
+  fi
+
+  local score=$(( $RANDOM % 8 + 1 ))
+  local dispscore=$score
+  local result=""
+  
+  # Mult if quest complete
+  local mult=$($logrun && _boomquest $1)
+  [ -n "$mult" ] && echo "Congratulations! You completed the boom quest!"
+
+  local boomtotal
+  if [ -r "$_boomRankings" ]; then
+    # Mult if boomed total%25=24 times (on 25th boom)
+    boomtotal=$(($(wc -w $_boomRankings | awk '{print $1}')-$(wc -l $_boomRankings | awk '{print $1}')))
+  else
+    boomtotal=0
+  fi
+  if $logrun && [[ "$(($boomtotal%25))" == "24" && "$1" =~ ^[^!./[\"\']+$ ]]; then
+    mult=$((${mult:-1}*2))
+    echo "Congratulations! You have boomed $(($boomtotal+1)) times!"
+  fi
+
+  # Mult if boom drought ended
+  if $logrun && [[ "$(cat $_boomDrought)" -gt "45" ]]; then
+    mult=$((${mult:-1}*2))
+    echo "Congratulations! Your drought was $(cat $_boomDrought) commands long!"
+  fi
+
+  if $logrun && [[ "$(cat $_boomBotModeBooms)" == "-2" ]]; then
+    mult=$((${mult:-1}*2))
+    echo "Congratulations! BoomBot has rewarded you with a SUPER boom!"
+    echo -n "-1" > $_boomBotModeBooms
+  fi
+
+  if [ $score -gt 5 ] ; then
+    score=5
+    dispscore=5
+  fi
+  if [ $(( $RANDOM % 500 + 1)) -eq 365 ]; then
+    score=6
+    dispscore=6
+    if $logrun; then
+      echo " $USER $(TZ=$BOOMTZ date -u +%s) $1" >> $_boomHoF
+      echo "$_BE_BOOM$_BE_BOOM$_BE_BOOM 6 BIG BOOMS - Welcome to the BOOM hall! $_BE_BOOM$_BE_BOOM$_BE_BOOM" >> $_boomUserLog
+    fi
+  fi
+  [ -n "$mult" ] && echo "$_BE_BOOM$_BE_SUPER$_BE_BOOM $USER earned a SUPER boom with ${dispscore}x$mult booms on $1! $_BE_BOOM$_BE_SUPER$_BE_BOOM" >> $_boomUserLog
+  score=$((score*${mult:-1}))
+
+  for i in $(seq 1 $score); do
+    result+="$_BE_BOOM"
+  done
+
+  local term
+  if $logrun; then
+    declare -f _boombarenv &>/dev/null && _boombarenv LASTBOOM $score $1
+    if [[ "$1" =~ ^[^!/.[\"\']+$ ]]; then
+      _boomlog $1 $score
+      term=$1
+    else return; fi
+  elif [[ "$1" == "_bot" ]]; then term="${@:2}"
+  else term="$@"
+  fi
+
+  if [[ "$1" == "_bot" ]]; then
+    echo "$_BE_BOT BoomBot thinks $term is $score big boom$([ $score -gt 1 ] && echo s)! $result"
+    return
+  fi
+  local prefix="Let's rank it on the"
+  $logrun && prefix=Random
+  echo "$prefix ${mult:+SUPER }boom meter! $term gets $dispscore${mult:+x$mult} big boom$([ $score -gt 1 ] && echo s)! $result"
+  if ! $logrun; then
+    echo "$USER's ranking it on the boom meter! $term gets $score big boom$([ $score -gt 1 ] && echo s)! $result" >> $_boommeterLog
+  fi
+  if [[ ! "$1" =~ "/" && -f "$_boomRankings" ]]; then
+    local exists=$(sed -ne "/^ $1 /p" $_boomRankings)
+    if [ -n "$exists" ]; then _boomavg $term; fi
+  fi
+  if $logrun && [[ -f "$_boomStreak" ]]; then _boomhog $term; fi
+  if $logrun && [[ "$BOOMBOTMODE" == "yes" ]]; then _bbmHandler $score; fi
+}
+
+###Function boomavg
+# "\t${B}boomavg${N} [CMD]";
+# "\t\tthis function prints your average rank and total booms for every command!";
+# "\t\tif CMD arg present, function will only print avg for CMD";
+###
+boomavg() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: boomavg: command not found; return; fi
+  if [ -n "$1" ]; then
+    if [ -n "$(_boomavg $1)" ]; then _boomavg "$1"
+    else echo $1 not found in averages!; fi
+  else
+    while read line; do
+      _boomavg ${line[0]}
+    done < $_boomRankings
+  fi
+}
+
+_boomlog() {
+  if [[ "$1" =~ [!./[\"\']+ ]]; then return; fi # Extra filter to be safe (for a while this was singlehandedly saving us)
+  if [ ! -f "$_boomRankings" ]; then echo " $1 $2" > $_boomRankings; \chmod 644 $_boomRankings &>/dev/null; return; fi
+  local exists=$(sed -ne "/^ $1 /p" $_boomRankings)
+  if [ -n "$exists" ]; then
+    sed -i "/^ $1 / s|$| $2|" $_boomRankings
+  else
+    sed -i "$ a \ $1 $2" $_boomRankings
+  fi
+  echo $USER boomed $1 for $2 boom$([ $2 -gt 1 ] && echo s)${3:+ on $3}! >> $_boomUserLog
+}
+_boomavg() {
+  local sum count
+  if [ -z "$(cat $_boomRankings | grep "^ $1 ")" ]; then return; fi
+  for num in $(sed -n "s|^ $1 ||p" $_boomRankings); do
+    sum=$((sum+num))
+    count=$((count+1))
+  done
+  echo "$1 has an average of $(bc <<< "scale=2; $sum/$count") booms after $count hit$([[ "$count" -gt "1" ]] && echo 's')!"
+}
+_boomhog() {
+  if [[ "$(cat $_boomStreak) " =~ " $1 " ]]; then
+    echo -n " $1" >> $_boomStreak
+  else
+    echo -n " $1" > $_boomStreak
+    \chmod 644 $_boomStreak &>/dev/null
+  fi
+  local streak=$(wc -w <(cat $_boomStreak) | awk '{{ print $1 }}')
+  if [ "$streak" -ge "2" ]; then
+    echo $_BE_BOOM$_BE_HOG$_BE_BOOM BOOM HOG! $1 is on a random boom streak of $streak in a row! $_BE_BOOM$_BE_HOG$_BE_BOOM
+    echo $_BE_BOOM$_BE_HOG$_BE_BOOM BOOM HOG! $USER\'s $1 hit a random boom streak of $streak! $_BE_BOOM$_BE_HOG$_BE_BOOM >> $_boomUserLog
+  fi
+}
+_boomquest() {
+  _rerollquest() {
+    local cmds=()
+    local minusers=$(($(wc -l $_boomUsers | awk '{print $1}')/2+1))
+    while read user; do
+      local rankfile=/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomrankings
+      if [ ! -r "$rankfile" ]; then continue; fi
+      while read line; do
+        cmds+=($(echo $line | awk '{print $1}'))
+      done < $rankfile
+    done < $_boomUsers
+    # Assumes under 19 users
+    cmds=($(echo "${cmds[@]}" | sed -e 's/ /\n/g' | sort | uniq -c | grep "^[ ]\+[$minusers-9]" | awk '{print $2}'))
+    if [[ ${#cmds[@]} -gt 0 ]]; then
+      echo ${cmds[$RANDOM % ${#cmds[@]}]} | openssl dgst -sha256 | awk '{print $2}' > $_boomQuest
+      echo "boombot: $_BE_BOT A new boom quest is active!" >> $_boommeterLog
+    fi
+  }
+  if [ "$(cat $_boomQuest)" == "$(echo $1 | openssl dgst -sha256 | awk '{print $2}')" ]; then
+    _rerollquest
+    echo 2
+    return
+  fi
+  if [ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomQuest) +%d)" != "$(TZ=$BOOMTZ date +%d)" ]; then
+    _rerollquest
+    return
+  fi
+}
+_jsonifyboomavgs() {
+  echo -ne "{"
+  while read user; do
+    echo -ne "\"$user\": {"
+    local rankfile=/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomrankings
+    if [ ! -e "$rankfile" ]; then echo -n "},"; continue; fi
+    while read line; do
+      if [[ -z "$1" || (-n "$1" && " $line " =~ " $1 ") ]]; then :; else continue; fi
+      local sum=
+      local count=
+      for num in ${line#* }; do
+        sum=$((sum+num))
+        count=$((count+1))
+      done
+      echo -ne "\"${line%% *}\": \"$(bc <<< "scale=2; $sum/$count")\","
+    done < $rankfile
+    echo -n erase
+    echo -n "},"
+  done < $_boomUsers
+  echo -ne "erase}"
+}
+_jsonifyboomfreqs() {
+  echo -ne "{"
+  while read user; do
+    echo -ne "\"$user\": {"
+    local rankfile=/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomrankings
+    if [ ! -e "$rankfile" ]; then echo -n "},"; continue; fi
+    while read line; do
+      if [[ -z "$1" || (-n "$1" && " $line " =~ " $1 ") ]]; then :; else continue; fi
+      local count=
+      for num in ${line#* }; do
+        count=$((count+1))
+      done
+      echo -ne "\"${line%% *}\": \"${count}\","
+    done < $rankfile
+    echo -n erase
+    echo -n "},"
+  done < $_boomUsers
+  echo -ne "erase}"
+}
+_jsonifyboomdroughts() {
+  echo -ne "{"
+  while read user; do
+    echo -ne "\"$(echo $user | awk '{print $1}')\": {"
+    echo -ne "\"longest\": \"$(echo $user | awk '{print $2}')\","
+    local droughtfile=/$BOOMUSERDIR/$(echo $user | awk '{print $1}')/$BOOMINSTALL/.boomdrought
+    if [ ! -e "$droughtfile" ]; then echo -n "erase},"; continue; fi
+    echo -ne "\"current\": \"$(cat $droughtfile)\","
+    echo -n erase
+    echo -n "},"
+  done < $_boomDroughtRecord
+  echo -ne "erase}"
+}
+_jsonifytopbooms() {
+  count=${1:-5}
+  echo -ne "{"
+  while read user; do
+    echo -ne "\"$user\": {"
+    local rankfile=/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomrankings
+    if [ ! -e "$rankfile" ]; then echo -n "},"; continue; fi
+    local place=0
+    while read line; do
+      place=$(($place+1))
+      echo -ne "\"${place}\": \"$line\","
+    done < <(sort -k2 -nr <(while read line; do
+                              echo -n "$(echo "$line" | awk '{print $2}') ";
+                              echo $(($(wc -w <(echo $line) | awk '{print $1}')-2));
+                            done < <(cat $rankfile | awk '{words = gsub(/ /, " ", $0); print words " " $0}' | sort -nr | head -n $count)))
+    echo -n erase
+    echo -n "},"
+  done < $_boomUsers
+  echo -ne "erase}"
+
+}
+if [[ ! "$PROMPT_COMMAND" =~ "_boommeter" ]]; then
+  _boomIntroTxt
+fi
+
+###Alias doombot
+# "\t${B}doombot${N}";
+# "\t\tturn off boombot mode in style!";
+# "\t\tthis alias runs \`boombot exit\`";
+###
+alias doombot='[[ "$BOOMBOTMODE" == "yes" ]] && boombot exit'
+###Alias doomsite
+###ExcAlias doomzone
+# "\t${B}doomsite${N}";
+# "\t\tkill site if launched with \`boomzone\` cmd";
+# "\t\t\`doomzone\` is aliased to this as well";
+###
+alias doomsite="ps aux | grep \"$BOOMSITECMD.*$BOOMSITE\" | grep -v grep | awk '{print \$2}' | xargs kill &>/dev/null"
+alias doomzone="doomsite"
+###Alias doom
+###ExcAlias doomnow
+# "\t${B}doom${N}";
+# "\t\tpause random output and turn off all boom commands";
+# "\t\talso will kill site launched with \`boomzone\`";
+# "\t\tclears terminal after running - will persist and clear all terminals as of patch 1.7.13";
+# "\t\tresume boom functionality with \`bringtheboom\`";
+###
+alias doom="_boombotChatCmd doom; doombot; doomsite; export DOOMBOOM=yes; echo No booms for you!; echo -n yes > $_doomTracker ; clear"
+alias doomnow="doom; echo doomnow is deprecated - use doom"
+###Alias bringtheboom
+# "\t${B}bringtheboom${N}";
+# "\t\tactivate the boom meter in all terminals!";
+# "\t\tthis command will re-activate the boom meter after running doom!";
+###
+alias bringtheboom="_boombotChatCmd bringtheboom; export DOOMBOOM= ; export AUTOBOOMBOT= ; echo -n '' > $_doomTracker ; echo $_BE_BOOM$_BE_BOOM WE BRING THE BOOM $_BE_BOOM$_BE_BOOM"
+###Alias boomhelp
+# "\t${B}boomhelp${N}";
+# "\t\tprint important parts of boom intro text";
+# "\t\thelp functionality of boomhelp deprecated by boomdocs";
+###
+alias boomhelp="_boomIntroTxt flag"
+
+###Function boom
+# "\t${B}boom${N} <cmd> <opts>";
+# "\t\tcentral location for boomuser commands";
+# "\t\tsee \`boomdocs\` for other boom-related command help";
+# "\t\tuse options below in place of <cmd> <opts>";
+# "";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman _boom-.*")";
+# "\t\t${B}help${N}\n\t\t\tprints this help message";
+###
+###SubFunction _boom-avg
+# "\t${B}boom-avg${N} [CMD]";
+# "\t\truns boomavg with optional CMD arg";
+###
+###SubFunction _boom-board
+###ExcFunction _boom-board-avg
+###ExcFunction _boom-board-drought
+###ExcFunction _boom-board-freq
+###ExcFunction _boom-board-full
+###ExcFunction _boom-board-today
+###ExcFunction _boom-board-top
+# "\t${B}boom-board${N} [${B}avg${N} | ${B}drought${N} | ${B}freq${N} | ${B}full${N} | ${B}today${N} | ${B}top${N} [NUM] | ${B}help${N} | CMD]";
+# "\t\tshows boom leaderboard for all boomusers";
+# "\t\twill print avg/freq/top/drought boards by default, or:";
+# "\n\t\t${B}avg${N}\n\t\t\tsee and compare user avgs of all commands randomly boomed by more than one person";
+# "\t\t${B}drought${N}\n\t\t\tsee and compare longest & current droughts";
+# "\t\t${B}freq${N}\n\t\t\tsee and compare boom frequency for all commands randomly boomed by more than one person";
+# "\t\t${B}full${N}\n\t\t\tsee full chart of boom avgs/freqs/droughts including cmds only boomed by one user";
+# "\t\t${B}today${N}\n\t\t\tsee amount of booms each user has received today - same as \`chat /boomstoday\` but the output is sorted";
+# "\t\t${B}top${N}\n\t\t\tsee all-time top NUM (default 5) boomed commands for all users";
+# "\t\t${B}help${N}\n\t\t\tshow boom board help";
+# "\t\tCMD\n\t\t\tsee avg and freq boards for specific CMD for all users";
+###
+###SubFunction _boom-chat
+###ExcFunction _boom-chat-cipher
+###ExcFunction _boom-chat-decipher
+###ExcFunction _boom-chat-edit
+###ExcFunction _boom-chat-env
+###ExcFunction _boom-chat-clear
+###ExcFunction _boom-chat-timeout
+# "\t${B}boom-chat${N} [${B}/${N}<cmd> | ${B}cipher${N} | ${B}decipher${N} | ${B}edit${N} | ${B}env${N} | ${B}clear${N} | ${B}timeout${N} | ${B}help${N}] [COMMENT]";
+# "\t\tpost COMMENT to the boom zone ($BOOMSITE)";
+# "\t\tuse \`chat\` alias to be faster";
+# "\t\tmention boomusers with @";
+# "\n\t\t${B}cipher${N} COMMENT\n\t\t\tput COMMENT in code on the site";
+# "\t\t${B}clear${N}\n\t\t\tsave off and clear chat log from site";
+# "\t\t${B}decipher${N} [NUM | CODE]";
+# "\t\t\tread last NUM (default 5) ciphered lines in code on the site";
+# "\t\t\talternatively, input a CODE to decipher";
+# "\t\t${B}edit${N} WORD REPLACEMENT";
+# "\t\t\tfind and replace WORD in last chat with REPLACEMENT string";
+# "\t\t\tedited chats will show up with an asterisk on the site";
+# "\t\t\tedit will walk you through all instances of word and give you a preview of the change";
+# "\t\t\tREPLACEMENT can be multiple words with the use of quotes";
+# "\t\t${B}env${N}";
+# "\t\t\tenter a command line interface where each line is a chat command!";
+# "\t\t\tthe chat env is a fully-featured env that runs chat cmds without typing \`chat\`";
+# "\t\t\tchats input to the env will escape special chars for you!";
+# "\t\t\tsupports emojis, /cmds, completion, mentions, ascii, ciphers, edits, etc.";
+# "\t\t\tnew chats and bot responses will print (newest on bottom) while in the env";
+# "\t\t\ttype \"exit\" to exit, \"?\" to see boom chat help, and \"help\" to see chat help in env";
+# "\t\t${B}timeout${N}";
+# "\t\t\tlist current chat timeouts and minutes remaining for each";
+# "\t\t${B}help${N}\n\t\t\tshow chat /<cmd> help";
+# "\t\t${B}/${N}<cmd>\n\t\t\tif <cmd> is valid, BoomBot will reply in chat!";
+# "\t\t\tsee \`chat help\` for valid <cmd> values!";
+###
+###SubFunction _boom-conf
+# "\t${B}boom-conf${N}";
+# "\t\tview configuration options and commands for the boom suite!";
+###
+###SubFunction _boom-drought
+###ExcFunction _boom-drought-me
+###ExcFunction _boom-drought-longest
+###ExcFunction _boom-drought-rarity
+###ExcFunction _boom-drought-rarity-fav
+# "\t${B}boom-drought${N} [${B}longest${N} | ${B}rarity${N}]";
+# "\t\tthe boom drought tracks how many unique commands have run since the last random boom";
+# "\t\tthe default boom drought behavior prints your current drought";
+# "\n\t\t${B}longest${N}\n\t\t\tsee the current longest boom drought";
+# "\t\t${B}rarity${N} [${B}fav${N}] [NUM]\n\t\t\tsee the rarity of a NUM length drought";
+# "\t\t\tdefaults to showing rarity of your current drought";
+# "\t\t\tadd fav positional arg for favorite odds";
+###
+###SubFunction _boom-env
+###ExcFunction _boom-env-exit
+# "\t${B}boom-env${N} [${B}exit${N} | ${B}help${N}]";
+# "\t\tsource the boom env to allow running boom commands with completion without the preceeding \`boom\`";
+# "\t\taliases created by this command will be printed to the terminal";
+# "\t\tthis will not overwrite existing commands";
+# "\t\texit will unalias env commands and help will print this help";
+# "\n\t\tadd \`boom env &>/dev/null\` to your .bashrc to start terminals with the boom env sourced!";
+###
+###SubFunction _boom-favorite
+###ExcFunction _boom-favorite-entries
+# "\t${B}boom-favorite${N} [${B}entries${N}]";
+# "\t\tdisplay BoomBot's favorite user for the day!";
+# "\t\tBoomBot's favorite has the odds of a random boom slashed by 1/3!";
+# "\t\tget random booms to increase the odds of being the favorite tomorrow!";
+# "\t\tadd entries keyword to view current entries per user for tomorrow's drawing!";
+###
+###SubFunction _boom-hall
+# "\t${B}boom-hall${N}\n\t\tdisplay all who have entered the hallowed hall of BOOM";
+###
+###SubFunction _boom-latest
+# "\t${B}boom-latest${N}\n\t\tdisplay who was most recently randomly boomed";
+###
+###SubFunction _boom-meter
+# "\t${B}boom-meter${N} THING\n\t\truns boommeter on THING";
+###
+###SubFunction _boom-patchnotes
+###ExcFunction _boom-patchnotes-latest
+###ExcFunction _boom-patchnotes-full
+# "\t${B}boom-patchnotes${N} [${B}full${N} | ${B}latest${N} [NUM]]\n\t\tprint latest boomrc patch notes";
+# "\t\tuse latest keyword to show NUM (default 1) latest lines of patch notes";
+# "\t\tuse full keyword to show all patch notes";
+###
+###SubFunction _boom-silent
+# "\t${B}boom-silent${N}\n\t\ttoggles silent mode where _boommeter will still run but nothing will be printed";
+# "\t\tthis is useful if users don't want to doom but also don't want output";
+###
+###SubFunction _boom-todo
+# "\t${B}boom-todo${N}\n\t\tlist upcoming boomrc features\n\t\tloosely organized by priority - top TODO should be next up";
+###
+###SubFunction _boom-total
+###ExcFunction _boom-total-full
+###ExcFunction _boom-total-all
+# "\t${B}boom-total${N} [PERSON | ${B}all${N}]\n\t\tview total booms for yourself, boomuser PERSON, or all boomusers";
+###
+###SubFunction _boom-zone
+###ExcFunction _boom-zone-summary
+###ExcFunction _boom-zone-booms
+###ExcFunction _boom-zone-chat
+###ExcFunction _boom-zone-term
+# "\t${B}boom-zone${N} [${B}summary${N} | ${B}booms${N} | ${B}chat${N} | ${B}term${N}]";
+# "\t\tlaunch the boom zone site ($BOOMSITE) from cmd line by default";
+# "\t\talternatively, use the optional args to see site displays in the cmd line:";
+# "\n\t\t${B}summary${N}\n\t\t\tdisplay the boom boards/stats as formatted on the default site layout";
+# "\t\t${B}booms${N}\n\t\t\tsee the boom log from the middle of the site - newest on bottom";
+# "\t\t${B}chat${N}\n\t\t\tsee the last 40 lines from the chat log as on the site - newest on top";
+# "\t\t${B}term${N}\n\t\t\tshow an automatically updating site-like view of all three columns!";
+# "\t\t\tthis \"site view\" has a unique summary and can be exited by pressing any key";
+# "\t\t\tcolumns will be cut off in this view if the data is too long for the column";
+###
+boom() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: boom: command not found; return; fi
+  _drought_rarity() {
+    local droughtodds=${2:-15}
+    local bonusstr=
+    [[ $droughtodds -eq 10 ]] && bonusstr=" with favorite odds"
+    echo A drought of $1 has a $(bc -l <<< "scale=20; ($((droughtodds-1)) / $droughtodds)^$1 * 100" | sed -ne 's/\(.....\).*/\1/p')% chance of happening${bonusstr}
+  }
+  _chat_mentions() {
+    local mention=
+    local user=
+    if [[ "${@}" =~ "@" ]]; then
+      mention="$(echo ${@} | sed -ne 's/.*@\([a-z.]\+\).*/\1/p')"
+    fi
+    if [[ -n "$mention" && -w "/$BOOMUSERDIR/$mention/$BOOMINSTALL/.boomnotify" ]]; then
+      echo $USER mentioned you in boom chat >> /$BOOMUSERDIR/$mention/$BOOMINSTALL/.boomnotify
+    elif [[ "$mention" == "everyone" ]]; then
+      while read user; do
+        if [[ -w "/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomnotify" && "$user" != "$USER" ]]; then
+          echo $USER mentioned everyone in boom chat >> /$BOOMUSERDIR/$user/$BOOMINSTALL/.boomnotify
+        elif [[ "$user" != "$USER" ]]; then
+          echo Could not notify $user
+        fi
+      done < $_boomUsers
+    elif [[ "$mention" == "boombot" ]]; then
+      return
+    elif [ -n "$mention" ]; then
+      echo Could not notify $mention
+    fi
+  }
+  _update_and_print_chat() {
+    lastchattested="${lastchattested//\\/\\\\\\}"
+    lastchattested="${lastchattested//\[/\\[}"
+    lastchattested="${lastchattested//\]/\\]}"
+    lastchattested="${lastchattested//|/\\|}"
+    if [[ "$1" == "absolute" && ! "$lastchattested" =~ ^"^" ]]; then lastchattested="^$lastchattested$"; fi
+    if [[ "$lastchatupdate" != "$(stat -c %Y $_boommeterLog)" ]]; then
+      local flippedAscii asciiHandled=
+      flippedAscii=$(tac $_boommeterLog | sed "\|$lastchattested|q" | sed -ne '\|^\[ASCII|,\|^[^\(\[ASCII\)]|p;' | sed -e '\|^[^\(\[ASCII\)]| s|.*||' -e 's|^\[ASCII\] ||' -e 's|$|🤖|')
+      flippedAscii=$(tail -n +2 <(tac <<< "$flippedAscii" && echo 🤖))
+      local line asciiline
+      while read line; do
+        # This ASCII handling is tied with chat edit for messiest thing in the boomrc
+        if [[ -z "$asciiHandled" && "$line" =~ "[ASCII]" ]]; then
+          local printedAscii=$(sed -e '\|^🤖$|q' <<< "$flippedAscii")
+          while read asciiline; do
+            if [[ "$asciiline" == "🤖" ]]; then break; fi
+            if [[ -z "$asciiline" ]]; then continue; fi
+            awk -F'🤖' '{print $1}' <<< "$asciiline"
+          done < <(tac <<< "$printedAscii" | tail -n +2 && echo 🤖) | sed -e 's|^|   |'
+          flippedAscii=${flippedAscii#$printedAscii}
+          asciiHandled=y
+        elif [[ "$line" =~ "[ASCII]" ]]; then continue
+        else
+          asciiHandled=
+          echo "   $line"
+        fi
+      done < <(tac $_boommeterLog | sed "\|$lastchattested|q" | tac | tail -n +2 | sed -e 's|^\[EDITED\] |*|' -e 's|^\[CIPHER\] ||')
+      lastchatupdate=$(stat -c %Y $_boommeterLog)
+      lastchattested="$(tail -n 1 $_boommeterLog)"
+    fi
+  }
+
+  case "$1_" in
+    avg_)
+      boomavg ${@:2}
+    ;;
+    board_)
+      case "board_$2_" in
+        board_freq_)
+          local modifier=totals
+          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomfreqs | sed -re s/,?erase//g)" 3.0 $modifier
+        ;;
+        board_avg_)
+          local modifier=
+          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomavgs | sed -re s/,?erase//g)" .2 $modifier
+        ;;
+        board_drought_)
+          local modifier=
+          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomdroughts | sed -re s/,?erase//g)" 3.0 $modifier
+        ;;
+        board_all_) ;&
+        board_full_)
+          echo Average Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomavgs | sed -re s/,?erase//g)" .2 "rare"
+          echo Frequency Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomfreqs | sed -re s/,?erase//g)" 3.0 "rare"
+          echo Drought Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomdroughts | sed -re s/,?erase//g)" 3.0 "rare"
+        ;;
+        board_today_)
+          if [[ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomFavor) +%d)" != "$(TZ=$BOOMTZ date +%d)" ]]; then
+            echo Nobody has boomed today...
+          fi
+          echo Total booms $(stat -c %y $_boomFavor | sed -e 's/[0-9].\(..\)-\([0-9].-[0-9].\) .*/\2-\1/'): && sed -ne "2p" $_boomFavor | sed -ne "s/ /\n/gp" | grep [a-z] | sort | uniq -c | sort -nr
+        ;;
+        board_top_)
+          echo Top Boomed Commands Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifytopbooms ${3:-5} | sed -re s/,?erase//g)" 0.0 twoper
+        ;;
+        board__)
+          local modifier=
+          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          local freqmodifier=totals
+          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then freqmodifier=rare; fi
+
+          echo Average Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomavgs | sed -re s/,?erase//g)" .2 $modifier
+          echo Frequency Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomfreqs | sed -re s/,?erase//g)" 3.0 $freqmodifier
+          echo Top Boomed Commands Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifytopbooms | sed -re s/,?erase//g)" 0.0 twoper
+          echo Drought Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomdroughts | sed -re s/,?erase//g)" 3.0 $modifier
+        ;;
+        board_help_)
+          boomdocs boom-board
+        ;;
+        *)
+          echo Average Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomavgs $2 | sed -re s/,?erase//g)" .2 "rarecmd"
+          echo Frequency Leaderboard
+          echo
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomfreqs $2 | sed -re s/,?erase//g)" 3.0 "rarecmd"
+        ;;
+      esac
+    ;;
+    chat_)
+      # Catch timeout if first command since being timed out is chat
+      if [[ "$(cat $_boomNotify)" =~ " timed out " ]]; then
+        local lasttimeout=$(sed -ne "/$USER/ s/$USER //p" $_boomTimeout | tail -n 1)
+        export BOOMTIMEDOUT=$([ $(($(TZ=$BOOMTZ date -u +%s)-${lasttimeout:-0})) -le $_BOOMDEFAULTTIMEOUT ] && echo yes || echo no)
+      fi
+
+      if [[ "$(cat $_boomNotify)" =~ " mentioned you " ]]; then
+        sed -i '/ mentioned /d' $_boomNotify
+      fi
+
+      if [[ "$BOOMTIMEDOUT" == "yes" ]]; then
+        echo $_BE_BOT You are currently timed out - wait 30 minutes to chat again $_BE_BOT
+        return
+      fi
+
+      case "chat_$2_" in
+        chat_clear_)
+          cat $_boommeterLog > $_boommeterLog-$(TZ=$BOOMTZ date -u +%s)
+          echo "$USER reset the boom chat" > $_boommeterLog
+          #echo "$USER is testing resetting the boom chat" >> $_boommeterLog
+
+          while read user; do
+            sed -i '/ mentioned /d' /$BOOMUSERDIR/$user/$BOOMINSTALL/.boomnotify
+          done < $_boomUsers
+        ;;
+        chat_cipher_)
+          _chat_mentions ${@:3}
+          echo "[CIPHER] $USER: $(echo -n "${@:3}" | sed -e "s/['"'"]//g' | xargs -n 1 | rev | xargs | tr '[A-Za-z0-9]' '[N-ZA-Mn-za-m3-90-2]')" >> $_boommeterLog
+          if [[ " $@ " =~ " @boombot " && ! "${@:2}" =~ ^"/" ]]; then
+            if [[ $(( $RANDOM % 70 )) -eq 3 ]]; then
+              echo "[CIPHER] boombot: $_BE_BOT $(echo -n "BoomBot hears you but refuses to respond" | sed -e "s/['"'"]//g' | xargs -n 1 | rev | xargs | tr '[A-Za-z0-9]' '[N-ZA-Mn-za-m3-90-2]')" >> $_boommeterLog
+            elif [[ $(( $RANDOM % 70 )) -eq 33 ]]; then
+              echo "[CIPHER] boombot: $_BE_BOT $(echo -n "Imagine mentioning BoomBot in chat like you\'re somebody" | sed -e "s/['"'"]//g' | xargs -n 1 | rev | xargs | tr '[A-Za-z0-9]' '[N-ZA-Mn-za-m3-90-2]')" >> $_boommeterLog
+            elif [[ $(( $RANDOM % 70 )) -eq 43 ]]; then
+              echo "[CIPHER] boombot: $_BE_BOT $(echo -n "If BoomBot could respond to that, BoomBot would." | sed -e "s/['"'"]//g' | xargs -n 1 | rev | xargs | tr '[A-Za-z0-9]' '[N-ZA-Mn-za-m3-90-2]')" >> $_boommeterLog
+            else
+              local score=$((RANDOM % 5 + 1))
+              echo "[CIPHER] boombot: $_BE_BOT $(echo -n "BoomBot gives that $score boom$([ $score -gt 1 ] && echo s)!" | sed -e "s/['"'"]//g' | xargs -n 1 | rev | xargs | tr '[A-Za-z0-9]' '[N-ZA-Mn-za-m3-90-2]')" >> $_boommeterLog
+            fi
+          fi
+          _chat_cmds ${@:3}
+        ;;
+        chat_decipher_)
+          if [ -z "$3" ]; then
+            while read line; do
+              echo ${line%%:*}: $(echo -n ${line##*:} | xargs -n 1 | rev | xargs | tr '[N-ZA-Mn-za-m3-90-2]' '[A-Za-z0-9]')
+            done < <(cat $_boommeterLog | sed -ne '/^\[CIPHER\] / s/^\[CIPHER\] //p' | tail -n 5)
+          elif [[ "${#@}" -eq "3" && "${@:3}" =~ ^[0-9]+$ ]]; then
+            while read line; do
+              echo ${line%%:*}: $(echo -n ${line##*:} | xargs -n 1 | rev | xargs | tr '[N-ZA-Mn-za-m3-90-2]' '[A-Za-z0-9]')
+            done < <(cat $_boommeterLog | sed -ne '/^\[CIPHER\] / s/^\[CIPHER\] //p' | tail -n ${@:3})
+          else
+            echo "${@:3}" | xargs -n 1 | rev | xargs |  tr '[N-ZA-Mn-za-m3-90-2]' '[A-Za-z0-9]'
+          fi
+        ;;
+        chat_edit_)
+          # I'm sorry for this mess
+          if [[ "$#" != "4" ]]; then echo Expects \`chat edit FIND REPLACE\` with one word args; return; fi
+          local lastline=($(sed -ne '/^\(\[EDITED\] \)\{0,1\}'"$USER"': /s|\(\[EDITED\] \)\{0,1\}\(.*\)|\2|p' $_boommeterLog | tail -n 1))
+
+          local prevwords=()
+          local word found respY
+          for word in ${lastline[@]:1}; do
+            if [[ " $word " == " $3 " ]]; then
+              found=yes
+              if [ $(sed -ne '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|p' $_boommeterLog | wc -l) -gt 1 ]; then echo Error: More than one line matches the previous chat - cannot edit; return; fi
+              read -p "$(sed -ne '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\[EDITED\] ||;\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\('"${prevwords[*]}"'\) '"$3"'|\1 '"$4"'|p' $_boommeterLog) -- look right y/[n]? " respY
+              if [[ " y Y yes " =~ " $respY " ]]; then
+                sed -i '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\[EDITED\] ||;\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\('"$USER"': '"${prevwords[*]:+${prevwords[*]} }"'\)'"$3"'|[EDITED] \1'"$4"'|' $_boommeterLog
+                break
+              else
+                echo Skipping...;
+              fi
+            fi
+            prevwords+=($word)
+          done
+          if [[ "$found" != "yes" ]]; then
+            echo Error: \" $3 \" not found in \" ${lastline[@]:1} \"
+          fi
+        ;;
+        chat_env_)
+          echo -n  "$_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          echo -n " $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          echo -n " $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          echo    " $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          echo "$_BE_BOT           Welcome to the chat environment          $_BE_BOT"
+          echo "$_BE_BOT BoomBot won't exactly do what you say, don't worry $_BE_BOT"
+          echo -n  "$_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          echo -n " $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          echo -n " $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          echo    " $_BE_BOT $_BE_BOT $_BE_BOT $_BE_BOT"
+          local userInput _envcall_
+          local lastchatupdate=$(stat -c %Y $_boommeterLog)
+          local lastchattested="$(tail -n 1 $_boommeterLog)"
+          _chat_env_read_with_completion() {
+            local hostfile=/tmp/.boomhostcompletion
+            set -o emacs
+            unset HOSTFILE
+            export HOSTFILE=$hostfile
+            bind '"\e[A": ""' # don't allow up arrow
+            bind '"\C-g":complete-hostname' # complete from dynamically generated hostfile
+            bind '"\C-xy":possible-hostname-completions' # print completions if multiple options
+            bind -x '"\C-xh":"__chat_env_comp /tmp/.boomhostcompletion"' # generate hostfile
+            bind '"\t":"\C-xh\C-g\C-xy"'
+            echo "0 notinitialized" > $hostfile
+            unset HOSTFILE # clear any already-read hosts
+            HOSTFILE=$hostfile \
+            read -e -p ' > ' && printf '%s' "$REPLY"
+            rm $hostfile &>/dev/null
+          }
+          __chat_env_comp() {
+            local curline="${READLINE_LINE:0:$READLINE_POINT}" # save current line up to cursor
+            local cur="${curline##* }" # save current word
+            local prev="${curline% *}"
+            [[ "$prev" =~ " " ]] && prev="${prev##* }" # save previous word
+            [[ ! "$curline" =~ ' ' ]] && prev=chat
+            local hostfile="$1"
+
+            # Trick chat completion to complete for us
+            COMP_WORDS=($(echo "chat $curline"))
+            [[ -z "$cur" ]] && COMP_WORDS+=('')
+            COMP_LINE="chat $curline"
+            COMP_CWORD=$(( ${#COMP_WORDS[@]} - 1 ))
+            COMP_POINT=${#COMP_LINE}
+            _chat chat ${cur:-''} $prev 2>/dev/null
+
+            # Handle special cases
+            if [[ "$cur" =~ ^"@" ]]; then
+              # Directly complete mentions
+              if [[ "${#COMPREPLY[@]}" == "1" ]]; then
+                local precomp="${curline%$cur}"
+                local postcomp="${precomp}$COMPREPLY "
+                local restofline="${READLINE_LINE#${curline}}"
+                READLINE_LINE="$postcomp${restofline:+${restofline# }}"
+                READLINE_POINT=${#postcomp}
+              else
+                # Empty compreply bc @ will break hostname completion
+                COMPREPLY=()
+              fi
+            elif [[ "$cur" =~ ^"-" && "${#COMPREPLY[@]}" == "1" ]]; then
+              # Remove -emoji- str so that completion will replace with emoji
+              local precomp="${curline%$cur}"
+              local restofline="${READLINE_LINE#${curline}}"
+              READLINE_LINE="$precomp${restofline}"
+              READLINE_POINT=${#precomp}
+            fi
+
+            # Build out hosts file to complete from for complete-hostname
+            echo -n '' >$hostfile
+            for word in $(echo ${COMPREPLY[@]}); do [[ ! "$word" =~ ^"@" ]] && echo 0 $word >>$hostfile; done # 0 in case comp starts with num
+
+            # Get bash to call sv_hostfile to re-init hostfile for completion with new options
+            unset HOSTFILE
+            HOSTFILE=$hostfile
+          }
+          #while read -p " > " userInput; do # old non-completed method
+          while :; do
+            userInput=$(_chat_env_read_with_completion) # must be in subshell so bind/histfile things don't break env
+            _update_and_print_chat absolute
+            if [[ -n "$userInput" && " h help --help -h -help " =~ "$userInput" ]]; then
+              _chatHelpTxt | sed -e 's|^|   |'
+              echo
+              echo "   \"?\" will open boom-chat help"
+              echo "   \"exit\" will exit the chat env"
+            elif [[ "$userInput" == "?" ]]; then
+              boomdocs boom-chat
+            elif [[ -z "$userInput" ]]; then continue
+            elif [[ "$userInput" =~ ^"env" ]]; then echo "   $_BE_BOT Trying to avoid env-ception here $_BE_BOT"; continue 
+            elif [[ "$userInput" =~ ^"/text" ]]; then
+              _envcall_=yup chat /text ${userInput#/text}
+              lastchattested="$(tail -n 1 $_boommeterLog)"
+              _update_and_print_chat absolute
+            elif [[ "$userInput" =~ ^"/boomstoday" ]]; then
+              boomstoday | sed -e 's|^|   boombot: '"$_BE_BOT"' |'
+              chat /boomstoday ${userInput#/boomstoday}
+              lastchattested="$(tail -n 2 $_boommeterLog | head -n 1)"
+              _update_and_print_chat absolute
+            elif [[ "$userInput" != "exit" ]]; then
+              if [[ ! " edit cipher clear decipher timeout " =~ " ${userInput%% *} " ]]; then lastchattested="$USER: $(sed 's/ \+$//' <<<"$userInput")"; fi
+              chat $userInput | sed -e 's|^|   |'
+              if [[ " edit cipher clear " =~ " ${userInput%% *} " || " $userInput " =~ " -"[a-zO$]+"- " ]]; then lastchattested="$(tail -n 1 $_boommeterLog)"; fi
+              _update_and_print_chat absolute
+            else
+              break
+            fi
+          done
+        ;;
+        chat_timeout_)
+          if [ $(($(TZ=$BOOMTZ date -u +%s)-$(cat $_boomTimeout | tail -n 1 | awk '{print $2}'))) -ge $_BOOMDEFAULTTIMEOUT ]; then
+            echo $_BE_BOT No users are currently timed out $_BE_BOT
+          else
+            echo $_BE_BOT The following users are currently on BoomBot\'s \"no-fly\" list $_BE_BOT
+            while read user; do
+              local lasttimeout=$(sed -ne "/$user/ s/$user //p" $_boomTimeout | tail -n 1)
+              local served=$(($(TZ=$BOOMTZ date -u +%s)-${lasttimeout:-0}))
+              [ $served -le $_BOOMDEFAULTTIMEOUT ] && echo $user: $(($(($_BOOMDEFAULTTIMEOUT-$served))/60)) min left
+            done < $_boomUsers
+          fi
+        ;;
+        chat_help_)
+          _chatHelpTxt
+        ;;
+        chat__)
+          echo What\'s boomin?
+        ;;
+        *)
+          # Emoji replace if user forgot to tab complete or in chat env
+          local chatstr
+          for word in "${@:2}"; do
+            if [[ "$word" =~ -[a-zO$]+- ]]; then
+              local emoji=$(sed -ne '/-'"${word//-/}"'-\?/p' $_boomEmojis | awk '{print $1}')
+              [[ -n "$emoji" ]] && chatstr+=" $emoji" || chatstr+=" $word"
+            else
+              chatstr+=" $word"
+            fi
+          done
+          chatstr="${chatstr# }"
+
+          _chat_mentions ${@:2}
+          echo "$USER: $chatstr" >> $_boommeterLog
+          if [[ " roast rarity meter --help " =~ " $2 " && "${#@}" == "2" ]]; then
+            echo boombot: $_BE_BOT BoomBot thinks $USER is lost... >> $_boommeterLog
+          fi
+          if [[ " $@ " =~ " @boombot " && ! "${@:2}" =~ ^"/" ]]; then
+            if [[ $(( $RANDOM % 70 )) -eq 3 ]]; then
+              echo boombot: $_BE_BOT BoomBot hears you but refuses to respond >> $_boommeterLog
+            elif [[ $(( $RANDOM % 70 )) -eq 33 ]]; then
+              echo boombot: $_BE_BOT Imagine mentioning BoomBot in chat like you\'re somebody >> $_boommeterLog
+            elif [[ $(( $RANDOM % 70 )) -eq 43 ]]; then
+              echo boombot: $_BE_BOT If BoomBot could respond to that, BoomBot would. >> $_boommeterLog
+            else
+              local score=$((RANDOM % 5 + 1))
+              echo "boombot: $_BE_BOT BoomBot gives that $score boom$([ $score -gt 1 ] && echo s)!" >> $_boommeterLog
+            fi
+          fi
+          _chat_cmds ${@:2}
+        ;;
+      esac
+    ;;
+    conf_)
+      _boss() { [[ "$USER" == "$BOOMBOSS" ]] && return 0 || return 1; }
+      _boss && echo Variables required to source \(Don\'t change unless you know what you are doing\):
+      _boss && echo BOOMCFGFILE=$BOOMCFGFILE
+      _boss && echo
+      _boss && echo Optional cfg-defined variables to set in BOOMCFGFILE:
+      _boss && echo \# Write your own roasts and hypes by setting these vars
+      _boss && echo "BOOMROASTS=(\"roast1\""
+      _boss && echo "            \"roast2\""
+      _boss && echo "            \"...\")"
+      _boss && echo "BOOMHYPES=(\"hype1\""
+      _boss && echo "           \"hype2\""
+      _boss && echo "           \"...\")"
+      _boss && echo
+      echo Optional user-defined variables to set before source:
+      echo \# Populate this to override boom holiday emojis
+      echo NOBOOMHOLIDAY=$NOBOOMHOLIDAY
+      echo
+      echo \# Emoji configs will be ignored by holidays unless NOBOOMHOLIDAY set
+      echo BOOM_EMOJI="${BOOM_EMOJI:-$_BE_BOOM_DEF}"
+      echo HOLE_EMOJI="${HOLE_EMOJI:-$_BE_HOLE_DEF}"
+      echo BOT_EMOJI="${BOT_EMOJI:-$_BE_BOT_DEF}"
+      echo SUPER_EMOJI="${SUPER_EMOJI:-$_BE_SUPER_DEF}"
+      echo HOG_EMOJI="${HOG_EMOJI:-$_BE_HOG_DEF}"
+      echo IMPORT_EMOJI="${IMPORT_EMOJI:-$_BE_IMPORT_DEF}"
+      echo EXPORT_EMOJI="${EXPORT_EMOJI:-$_BE_EXPORT_DEF}"
+      echo CHECK_EMOJI="${CHECK_EMOJI:-$_BE_CHECK_DEF}"
+      echo
+      echo Commands with independent configuration:
+      echo boombar conf \(boomdocs boombar\)
+      echo boombot conf \(boomdocs boombot\)
+      echo
+      echo Commands to run after source:
+      echo "boombar     (boomdocs boombar)"
+      echo boom silent \(boomdocs boom silent\)
+      echo "boom env    (boomdocs boom env)"
+    ;;
+    drought_)
+      _droughtcompare() {
+        local longestdrought=0
+        local winner=nobody
+        while read user; do
+          local filename="/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomdrought"
+          if [ ! -e "$filename" ]; then continue; fi
+          local drought=$(cat $filename)
+          if [[ "$drought" -gt "$longestdrought" ]]; then
+            longestdrought=$drought
+            winner="$user"
+          fi
+        done < $_boomUsers
+        echo "$_BE_BOOM$_BE_HOLE $winner has the longest drought after $longestdrought boomless commands! $_BE_HOLE$_BE_BOOM"
+      }
+      case "drought_$2_" in
+        drought_longest_)
+          _droughtcompare
+        ;;
+        drought_rarity_)
+          local evalarg=3 odds=15
+          if [[ "$3" == "fav" ]]; then evalarg=4; odds=10; fi
+          if [[ -z "${!evalarg}" || ! "${!evalarg}" =~ ^[0-9]+$ ]]; then echo Enter drought length to calculate; return; fi
+          _drought_rarity ${!evalarg} $odds
+        ;;
+        drought_me_)
+          echo \`boom drought me\` is deprecated and could be removed in a future patch
+          echo use \`boom drought\` instead
+          echo
+        ;&
+        drought__)
+          echo You haven\'t hit a random boom in $(cat $_boomDrought) commands!
+        ;;
+        drought_help_)
+          boomdocs boom-drought
+        ;;
+        *)
+          echo -e "Error: option \"$2\" not found"
+          boomdocs boom-drought
+        ;;
+      esac
+    ;;
+    env_)
+      case "env_$2_" in
+        env_exit_)
+          for aliasname in $BOOMENV; do
+            echo Removing alias $aliasname
+            unalias $aliasname &>/dev/null
+          done
+          BOOMENV=
+        ;;
+        env__)
+          if [[ -n "$BOOMENV" ]]; then echo Boom env already sourced!; return; else echo Sourcing boom env...; fi
+          if [[ -f "/$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomenvrc" ]]; then
+            source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomenvrc
+          else
+            echo Error: .boomenvrc not found
+          fi
+        ;;
+        env_help_)
+          boomdocs boom-env
+        ;;
+        *)
+          echo -e "Error: option \"$2\" not found"
+          boomdocs boom-env
+        ;;
+      esac
+    ;;
+    favorite_)
+      local day
+      if [ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomFavor) +%d)" == "$(TZ=$BOOMTZ date +%d)" ]; then
+        local curfav=$(sed -n 1p $_boomFavor)
+        echo $_BE_BOOM🏆 $curfav is BoomBot\'s favorite user today 🏆$_BE_BOOM
+
+        day=tomorrow
+      else
+        echo "$_BE_BOOM🏆 Nobody has boomed yet today 🏆$_BE_BOOM"
+        day=today
+      fi
+
+      # case here for automatic completion
+      case "favorite_$2_" in
+        favorite_entries_)
+          echo -e "\nEntries per user for $day's favorite drawing (max 8):"
+          sed -n "2s/ /\n/gp" $_boomFavor | grep [a-z] | sort | uniq -c | sed -e 's/[8-9"]/8/' -e 's/\([0-9]\)\{2,\}/8/g' -e 's/\s\+/'"$_BE_BOOM"' /'
+        ;;
+      esac
+    ;;
+    hall_)
+      echo $_BE_BOOM$_BE_BOOM$_BE_BOOM Those recorded below have achieved recognition in the hallowed hall of BOOM $_BE_BOOM$_BE_BOOM$_BE_BOOM;
+      while read line; do
+        echo $_BE_BOOM$_BE_BOOM$_BE_BOOM $(echo $line | awk '{print $1}'): $(echo $line | awk '{print $3}') - $(TZ=$BOOMTZ date -d @$(echo $line | awk '{print $2}')) $_BE_BOOM$_BE_BOOM$_BE_BOOM
+      done < $_boomHoF
+    ;;
+    latest_)
+      local latestboom=nobody
+      local winner=nobody
+      while read user; do
+        local filename="/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomrankings"
+        if [ ! -e "$filename" ]; then continue; fi
+        local timestamp="$(($(TZ=$BOOMTZ date -u +%s)-$(stat -c %Y "$filename")))"
+        if [[ "$latestboom" == "nobody" ]]; then
+          latestboom=$timestamp
+          winner=$user
+        elif [ "$timestamp" -lt "$latestboom" ]; then
+          winner=$user
+          latestboom=$timestamp
+        fi
+      done < $_boomUsers
+      echo $_BE_BOOM🎉 $winner has the latest random boom! 🎉$_BE_BOOM
+    ;;
+    meter_)
+      boommeter ${@:2}
+    ;;
+    patchnotes_)
+      case "patchnotes_$2_" in
+        patchnotes_latest_)
+          cat $BASH_SOURCE | sed -n '/^# [0-9]\.[0-9X]\.[0-9X]\+ .*$/p' | tail -n ${3:-1}
+        ;;
+        patchnotes__)
+          cat $BASH_SOURCE | sed -n '/^# [0-9]\.[0-9X]\.[0-9X]\+ .*$/p' | tail -n 1
+        ;;
+        patchnotes_full_) ;&
+        patchnotes_all_)
+          cat $BASH_SOURCE | sed -n '/^# [0-9]\.[0-9X]\.[0-9X]\+ .*$/p'
+        ;;
+        patchnotes_help_)
+          boomdocs boom-patchnotes
+        ;;
+        *)
+          if [ "$2" == "current" ]; then
+            echo -n " " && cat $BASH_SOURCE | sed -n '/^# [0-9]\.[0-9X]\.[0-9X]\+ .*$/p' | tail -n 1 | awk '{print $2}'
+          else
+            echo -e "Error: option \"$2\" not found"
+            boomdocs boom-patchnotes
+          fi
+        ;;
+      esac
+    ;;
+    silent_)
+      if   [[ "$_SILENTBOOM" == "no"  ]]; then export _SILENTBOOM="yes"; echo $_BE_BOT Boom silence set to: $_SILENTBOOM
+      elif [[ "$_SILENTBOOM" == "yes" ]]; then export _SILENTBOOM="no" ; echo $_BE_BOT Boom silence set to: $_SILENTBOOM
+      fi
+    ;;
+    todo_)
+      echo $_BE_BOOM$_BE_BOOM BOOM TODOs $_BE_BOOM$_BE_BOOM
+      sed -ne 's/#TODO: /TODO: /p' $BASH_SOURCE | grep -v " sed "
+    ;;
+    total_)
+      if [[ -n "${2}" && " $(cat $_boomUsers | xargs) " =~ " ${2} " ]]; then
+        local rankfile=/$BOOMUSERDIR/${2}/$BOOMINSTALL/.boomrankings
+        if [ -r "$rankfile" ]; then
+          echo ${2} has boomed a total of $(echo $(($(wc -w $rankfile | awk '{print $1}')-$(wc -l $rankfile | awk '{print $1}')))) times!
+        else
+          echo Error reading file for user ${2}
+        fi
+      elif [[ " full all " =~ " $2 " ]]; then
+        local fulltot=0
+        local rankfile=
+        for user in $(cat $_boomUsers | xargs); do
+          rankfile=/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomrankings
+          [ -r $rankfile ] && fulltot=$(($fulltot+$(echo $(($(wc -w $rankfile | awk '{print $1}')-$(wc -l $rankfile | awk '{print $1}'))))))
+        done
+        echo All users have boomed a total of $fulltot times!
+      else
+        echo You have boomed a total of $(echo $(($(wc -w $_boomRankings | awk '{print $1}')-$(wc -l $_boomRankings | awk '{print $1}')))) times!
+      fi
+    ;;
+    zone_)
+      case "zone_$2_" in
+        zone_summary_)
+          boom latest && echo && boom favorite && echo && boom drought longest && echo && boom board && echo -n Patch && boom patchnotes current && echo && boom hall
+        ;;
+        zone_booms_)
+          cat $_boomUserLog | tail -n 54
+        ;;
+        zone_chat_)
+          local lastchatupdate
+          local lastchattested="$(tail -n 41 $_boommeterLog | head -n 1)"
+          _update_and_print_chat absolute
+          #cat $_boommeterLog | tail -n 40 | tac | sed 's/\[\(CIPHER\|ASCII\|EDITED\)\] //g' # reversed order but kept ascii upright before _update_and_print_chat
+        ;;
+        zone_term_)
+          output() {
+            local file="$1"
+            local splits="$2"   # total num splits
+            local cursplit="$3" # starts from 0
+            local startcol=$((cursplit * COLS / splits))
+            local endcol=$((($cursplit+1) * COLS / splits - 1))
+            local idx=0
+
+            while IFS= read line; do
+              tput cup $idx $startcol
+              tput el
+              echo "$line"
+              tput cup $idx $endcol
+              tput el
+              ((idx++))
+            done < $file
+          }
+
+          local summ lastsumm booms lastbooms chat lastchat
+          local ROWS=$(tput lines)
+          local COLS=$(tput cols)
+
+          tput smcup
+          tput civis
+          while :; do
+            read -n 1 -t 1 input
+            if [[ -n "$input" ]]; then
+              tput rmcup
+              tput cnorm
+              return
+            fi
+
+            # Summary column
+            summ=$(boom latest && echo &&
+                   boom favorite && echo &&
+                   boom drought longest && echo &&
+                   boom board today && echo &&
+                  /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_boomUsers=<(whoami) _jsonifytopbooms 15 | sed -re s/,?erase//g)" 0.0 twoper && echo &&
+                   echo Patch $(boom patchnotes current) && echo &&
+                   echo Press \'q\' to quit)
+
+            # Booms column
+            booms=$(tail -n $((ROWS-3)) $_boomUserLog | tac)
+
+            # Chat column
+            chat=$(tail -n $((ROWS-3)) $_boommeterLog | tac |
+                   sed -e 's/^\[CIPHER\] //' \
+                       -e 's/^\[EDITED\] /*/' \
+                       -e 's/^\[ASCII\] //' \
+                       -e "s~\(.\{0,$((COLS/3-1))\}\).*~\1~" \
+                       -e 's/\\/\\\\/g')
+
+            if [[ "$summ" != "$lastsumm" || "$booms" != "$lastbooms" || "$chat" != "$lastchat" ]]; then
+              output <(head -n $((ROWS-3)) <<<"$summ") 3 0
+              lastsumm="$summ"
+
+              output <(echo "$booms") 3 1
+              lastbooms="$booms"
+
+              output <(cat <<<"$chat") 3 2
+              lastchat="$chat"
+            fi
+          done
+        ;;
+        *)
+          if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: boomzone: command not found; return; fi
+          command $BOOMSITECMD $BOOMSITE &>/dev/null & disown
+        ;;
+      esac
+    ;;
+    help_)
+      boomdocs boom
+    ;;
+    *)
+      echo -e "Error: option \"$1\" not found"
+      echo -e "       run \`boom help\` for docs"
+    ;;
+  esac
+}
+
+###Function boombot
+###ExcFunction _boombot-conf
+###ExcFunction _boombot-exit
+# "\t${B}boombot${N} [${B}conf${N} | ${B}exit${N}]";
+# "\t\tboombot puts the terminal in BoomBot Mode!";
+# "\t\trun commands in BoomBot Mode to earn SUPER booms from BoomBot!";
+# "\t\trun \`boombot conf\` to see current state of customizable BoomBot Mode values!";
+# "\t\trun \`boombot exit\` to exit BoomBot Mode";
+# "\n\t\tauto mode allows _boommeter to put user in BoomBot Mode automatically if a super boom is available";
+# "\t\tadd \`AUTOBOOMBOT=yes\` to .bashrc after sourcing .boomrc to use auto mode";
+# "\n\t\tto customize boombot's prompt, set BOOMBOTPROMPT with USER, HOSTNAME, and PWD in .bashrc";
+# "\t\tthe prompt should be set after sourcing .boomrc - default is ' USER\\\033[00m@\\\033[1;34mHOSTNAME\\\033[00m PWD'";
+# "\n\t\tif you want to run a command in the prompt, set BOOMBOTPROMPTCMD to the desired command in .bashrc";
+# "\t\tthe command will be validated and run, and its output will show after BOOMBOTPROMPT and before ' > '";
+# "\t\tthe command should be set after sourcing .boomrc - default is unset";
+###
+BOOMBOTMODE=no
+BOOMBOTPROMPT=' USER\033[00m@\033[1;34mHOSTNAME\033[00m PWD'
+BOOMBOTPROMPTCMD=
+_boombotprompt() { echo -e "$BOOMBOTPROMPT" | sed -e "s/HOSTNAME/$(hostname)/g" -e "s|PWD|$(pwd)|g" -e "s|/$BOOMUSERDIR/$USER|~|g" -e "s/USER/$(_boombotName)/g"; }
+boombot() {
+  case "$1_" in
+    conf_) ;&
+    env_)
+      echo Customizable BoomBot Mode Args:
+      echo AUTOBOOMBOT=$AUTOBOOMBOT
+      echo BOOMBOTPROMPT=\"${BOOMBOTPROMPT}\"
+      echo BOOMBOTPROMPTCMD=\"${BOOMBOTPROMPTCMD}\"
+    ;;
+    exit_) ;&
+    _)
+      _boombot $@ manual;
+    ;;
+    help_)
+      boomdocs boombot
+    ;;
+    *)
+      echo ERROR: $1 not recognized
+      boomdocs boombot
+    ;;
+  esac
+} 
+_boombot() {
+  if [[ " $@ " =~ " manual " && "$AUTOBOOMBOT" == "yes" ]]; then export AUTOBOOMBOT=no; fi
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: boombot: command not found; return; fi
+  if [[ "$1" == "exit" && "$BOOMBOTMODE" == "yes" ]]; then export PS1=${_boomRegularPs1:-'\u@\h \w $ '}; export BOOMBOTMODE=no; export AUTOBOOMBOT=no; return;
+  elif [[ "$1" == "exit" ]]; then return; fi
+  if [[ "$BOOMBOTMODE" == "yes" ]]; then return; fi
+  export BOOMBOTMODE=yes
+  export BOOMBAR_BBMREMARK="$_BE_BOT BoomBot likes it here $_BE_BOT"
+  _boomRegularPs1=$PS1
+  PS1='\[\033[00m\]$(declare -f _boombotprompt &>/dev/null && _boombotprompt || echo -e  "'"$_BE_BOT"' \033[1;32mboombot\033[00m@\033[1;34m\h\033[00m \w ")$([ -n "$BOOMBOTPROMPTCMD" ] && type $BOOMBOTPROMPTCMD &>/dev/null && $(echo $BOOMBOTPROMPTCMD))\[\033[00m\] > '
+}
+_boombotName() {
+  local botname=$(($RANDOM%35))
+  if [ $botname -eq 3 ]; then
+    echo -e "$_BE_BOT \033[1;31mboomking"
+  elif [ $botname -eq 8 ]; then
+    echo -e "$_BE_BOT \033[1;31mboomlover"
+  elif [ $botname -eq 12 ]; then
+    echo -e "$_BE_BOT \033[1;31m$USER?"
+  elif [ $botname -eq 4 ]; then
+    echo -e "$_BE_BOT \033[1;31mboomqueen"
+  elif [ $botname -eq 5 ]; then
+    echo -e "$_BE_BOT \033[1;33maj"
+  elif [ $botname -eq 7 ]; then
+    echo -e "$_BE_BOT \033[1;33mbigjustice"
+  elif [ $botname -eq 11 ]; then
+    echo -e "$_BE_BOT \033[1;33mrizzler"
+  elif [ $botname -eq 10 ]; then
+    echo -e "$_BE_BOT \033[1;33mcousinangelo"
+  else
+    echo -e "$_BE_BOT \033[1;32mboombot"
+  fi
+}
+_boombotChatCmd() {
+  local caller=${FUNCNAME[-1]}
+  [[ "$caller" == "_boombotChatCmd" ]] && caller=$1
+
+  # Did it like this so that boombot can react to whatever if we want to have it
+  case $caller in
+    doom)
+      [[ -z "$DOOMBOOM" ]] && echo -e "boombot: $_BE_BOT $USER just ran \`$caller\`... BoomBot is $(echo sad upset unhappy mad dying livid depressed lamenting grieving | xargs shuf -n1 -e) :(" >> $_boommeterLog
+    ;;
+    bringtheboom)
+      [[ "$DOOMBOOM" == "yes" ]] && echo -e "boombot: $_BE_BOT $USER just ran \`$caller\`... BoomBot is $(echo ecstatic elated thrilled happy thriving rejoicing | xargs shuf -n1 -e)!" >> $_boommeterLog
+    ;;
+    *)
+      :
+    ;;
+  esac
+}
+_bbmRemark() {
+  # Call this with cmd and score if applicable
+  local users=($(cat $_boomUsers | xargs))
+  local remarks=(
+    " is considering making its own language - BoomBot Lang - BBL for short."
+    " is happy that you ran \`$1\`"
+    " hates when people run \`$1\`"
+    " is sad that you ran \`$1\`"
+    " is indifferent about \`$1\`"
+    " can't decide what BoomBot likes."
+    " has actually met the Costco guys."
+    " is having an identity crisis."
+    " is tired today."
+    " is out here doing the best BoomBot can."
+    " is judging you for that."
+    " is tired of being used to farm super booms."
+    " thinks your boommeter is broken."
+    " has nothing to say to you."
+    " is always watching."
+    " wants to see you succeed."
+    " thinks you should roast ${users[$RANDOM % ${#users[@]}]} in chat."
+    " thinks you should hype up ${users[$RANDOM % ${#users[@]}]} in chat."
+    " is trying really hard to become conscious."
+    " eats booms for breakfast."
+    " is hungry for booms."
+    " thinks the world is your oyster."
+    " wants you to know BoomBot is better than GPT."
+    " is really into hibachi."
+    " wants to be a hibachi chef when BoomBot grows up."
+    " is thinking about learning to do the robot."
+    " says $(_chat_cmds _roastcall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " thinks $(_chat_cmds _roastcall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " is sure $(_chat_cmds _roastcall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " heard $(_chat_cmds _roastcall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " wants you to know that $(_chat_cmds _roastcall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " heard ${users[$RANDOM % ${#users[@]}]} say that $(_chat_cmds _roastcall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " is convinced ${users[$RANDOM % ${#users[@]}]} thinks that $(_chat_cmds _roastcall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " says $(_chat_cmds _hypecall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " thinks $(_chat_cmds _hypecall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " is sure $(_chat_cmds _hypecall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " heard $(_chat_cmds _hypecall_ ${users[$RANDOM % ${#users[@]}]} | sed -e 's/boombot: '"$_BE_BOT"'//' -e 's/'"$_BE_BOT"'//g')"
+    " smoked as a teen."
+    " says xphs your \`$1\`."
+    " has it out for ${users[$RANDOM % ${#users[@]}]}."
+    " is beefing with ${users[$RANDOM % ${#users[@]}]}."
+    " loves ${users[$RANDOM % ${#users[@]}]} endlessly."
+    " is sick of ${users[$RANDOM % ${#users[@]}]} being BoomBot's favorite."
+  )
+  if [[ $(( $RANDOM % 70 )) -eq 3 ]]; then
+    echo "$_BE_BOT Any ideas on power cycling? $_BE_BOT"
+  elif [[ $(( $RANDOM % 70 )) -eq 31 ]]; then
+    echo "$_BE_BOT Why my command not working? $_BE_BOT"
+  else
+    echo $_BE_BOT BoomBot ${remarks[$RANDOM % ${#remarks[@]}]} $_BE_BOT
+  fi
+}
+_bbmHandler() {
+  if [ -w "$_boomBotModeBooms" ]; then
+    if [ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomBotModeBooms) +%d)" != "$(TZ=$BOOMTZ date +%d)" ]; then
+      echo -n "0" > $_boomBotModeBooms
+    fi
+    if [[ "$(cat $_boomBotModeBooms)" == "-1" ]]; then return; fi
+    echo -n $(($(cat $_boomBotModeBooms)+$1)) > $_boomBotModeBooms
+    if [ $(cat $_boomBotModeBooms) -ge $(($RANDOM%15+14)) ]; then
+      _bbmReward "Thanks for booming with BoomBot!"
+    fi
+  fi
+}
+_bbmReward() {
+  if [[ "$(cat $_boomBotModeBooms)" != "-1" ]];
+    then echo -n "-2" > $_boomBotModeBooms
+    echo "$_BE_BOT $@ BoomBot has decided to award you x2 booms on your next hit! $_BE_BOT"
+  else
+    echo "$_BE_BOT BoomBot would give you another SUPER boom today if BoomBot could $_BE_BOT"
+  fi
+}
+
+###Function chat
+###ExcFunction _chat-cipher
+###ExcFunction _chat-decipher
+###ExcFunction _chat-edit
+###ExcFunction _chat-env
+###ExcFunction _chat-clear
+###ExcFunction _chat-timeout
+# "\t${B}chat${N} [${B}/${N}<cmd> | ${B}cipher${N} | ${B}decipher${N} | ${B}edit${N} | ${B}env${N} | ${B}clear${N} | ${B}timeout${N} | ${B}help${N}] [COMMENT]";
+# "\t\tquick command to execute \`boom chat\`";
+# "\t\tthis command does not get stored in bash history";
+# "\t\tsee \`boomdocs boom chat\` and \`boom chat help\` for more detailed help";
+###
+chat() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: chat: command not found; return; fi
+  boom chat "$@"
+  if [[ ! "$(cat $_boomTracker)" =~ "chat" ]]; then
+    echo "_chat" > $_boomTracker
+  fi
+}
+_chatHelpTxt() {
+  echo $_BE_BOT$_BE_BOT Welcome to the BoomBot help $_BE_BOT$_BE_BOT
+  echo /help - BoomBot will print this!
+  echo /ascii FILE - BoomBot will let you print ascii file to chat - completes with files in \~/ascii dir unless completing from top level path!
+  echo /boomstoday - BoomBot will print a breakdown of how many random booms each user has received today!
+  echo /hype PERSON - BoomBot will hype up \"me\" or any \"\<boomusername\>\"!
+  echo /joke - BoomBot will tell a joke in chat!
+  echo /meter THING - BoomBot will rank THING on the boom meter!
+  echo /patch - BoomBot will tell you what the latest patch number is!
+  echo /rarity [fav] [NUM] - BoomBot will tell you how rare a drought streak is - add fav positional arg for favorite odds!
+  echo /roast PERSON - BoomBot will roast \"me\" or any \"\<boomusername\>\"!
+  echo /text TEXT - BoomBot will convert TEXT to ascii and put it in chat!
+  echo /total [PERSON \| all] - BoomBot will say the total times you \(or PERSON\) have randomly boomed!
+  echo /work PERSON - BoomBot will tell \"\<boomusername\>\" to get back to work!
+  echo -\<emoji\>- - BoomBot will show emoji options with -\<tab\> and complete -\<emoji\>- names in terminal!
+  if [[ " $BOOMADMINS " =~ " $USER " ]]; then
+    echo
+    echo Admin Commands:
+    echo /timeout PERSON - BoomBot will timeout a boom user for 30 minutes!
+  fi
+  echo $_BE_BOOM$_BE_BOOM Don\'t forget to BOOM! $_BE_BOOM$_BE_BOOM
+}
+_chat_cmds() {
+  local jokes=(
+    "Why don't skeletons fight each other? They don't have the guts."
+    "Why don’t programmers like nature? It has too many bugs."
+    "Why was the math book sad? Because it had too many problems."
+    "What do you call fake spaghetti? An impasta."
+    "Why don’t oysters donate to charity? Because they are shellfish."
+    "What’s orange and sounds like a parrot? A carrot."
+    "Why did the computer go to the doctor? Because it had a virus!"
+    "Why was the broom late? It swept in."
+    "What do you call cheese that isn't yours? Nacho cheese."
+    "What’s a skeleton’s least favorite room in the house? The living room."
+    "Why can't your nose be 12 inches long? Because then it would be a foot!"
+    "What do you get if you cross an elephant and a rhinoceros? Elephino."
+    "Why don’t eggs tell jokes? They might crack up!"
+    "How do you organize a space party? You planet."
+    "Why did the scarecrow win an award? Because he was outstanding in his field!"
+    "Why did the coffee file a police report? It got mugged."
+    "What do you get when you cross a snowman and a vampire? Frostbite."
+    "What did one ocean say to the other ocean? Nothing, they just waved."
+  )
+  local roasts=(
+    " is more frustrating than a customer."
+    " speaks less clearly than a corporate email."
+    " codes like a new hire."
+    " probably doesn't deserve to be a boomuser."
+    " looks like they only ever get 1 boom."
+    " is going to be the last to get 6 booms."
+    " is a droughtmonger."
+    " seems like a racist."
+    " definitely fakes the funk."
+    " talks it but doesn't walk it."
+    " would probably lose a fight to a child."
+    "'s jokes belong in the dumpster."
+    " gets -1 booms $_BE_HOLE"
+    " abuses BoomBot. $_BE_BOT"
+    " gets a big DOOM $_BE_HOLE"
+    " should probably run doom $_BE_HOLE"
+    " takes the \"us\" out of boomuser."
+    " might actually never get 6 booms."
+    " looks like they don't test their code."
+    " looks like they don't know what an IDE is."
+    " probably can't use vim."
+    " definitely doesn't have descriptive git commits."
+    " codes like an orangutan."
+    " has the attention span of a fish."
+    "'s brain was cooked by reels ages ago."
+    " needs a new job."
+    " writes code that is great... sorry, BoomBot meant terrible."
+    " couldn't have made BoomBot if they tried."
+    " is conspiring against BoomBot. $_BE_BOT"
+    " secretly hates BoomBot. $_BE_BOT"
+    " secretly hates the boom meter."
+    " is an enemy of the boom."
+    " is banned from Switzerland."
+    " gets trashed on half a marg."
+    " falls for the phishing emails."
+    " probably uses light mode."
+    " is getting their MR torn up as we speak."
+    " was just voted most likely to crash out."
+    " will forever be judged in the git blame."
+    "'s name looks funny spelled backwards."
+    " looks like they would type \`chat cipher xphs\`"
+    " still wets the bed."
+    " commits atrocities in the command line."
+    "'s .bashrc is rudimentary."
+    " talks like gen alpha."
+    " just messed up their git branch."
+    " thought chicken jockey was funny."
+    " runs in their free time."
+    " thought RAM meant Rude and Mean."
+    " sleeps at work."
+    " depends on caffeine."
+    " isn't on the latest patch."
+    " has some crazy BO."
+    " doesn't even know who Rizzler is."
+    " has fragile bones."
+    " probably uses slurs in their personal life."
+    " laughs at people with special needs."
+    " wrote in Kanye in the 2020 election."
+    " didn't drink milk as a kid."
+    " believes every stereotype."
+    " brags about hating minorities."
+    " would be the first one out on Chopped."
+    " would Wipeout on the Big Balls."
+    " burns down buildings for fun."
+    " says the worst answers on Family Feud."
+    " confidently solves the puzzle wrong on Wheel of Fortune."
+    " bets it all on the Daily Double just to let time run out."
+    " was an extra in their school play."
+    " thinks Bride & Prejudice inspired Jane Austen."
+    " is gonna make it as a Hollywood barista."
+    " changed their name to Quatro Quatro."
+    " changed their name to Hingle McCringleberry."
+    " changed their name to T.J. A.J. R.J. Backslashinfourth V."
+    " changed their name to X-Wing @Aliciousness."
+    " changed their name to Davoin Shower-Handel."
+    " changed their name to Scoish Velociraptor Maloish."
+    " always uses the handicap stall."
+    " has streak marks in their pants."
+    " parks in the handicap spot without permission."
+    "'s pets are racist."
+    " buys pets just to leave them on the side of the road."
+    " doesn't boom enough to be a boomuser."
+    " just told BoomBot that 2Pac is still alive."
+    " booms their pants."
+    " booms other peoples' pants."
+    " is a home wrecker."
+    " is openly homophobic."
+    " HATES to see others win."
+    " insta stalks everyone they meet."
+    " asks AI very personal questions."
+    " fell in love with GPT 3.0"
+    " thinks AI stands for Average Intelligence."
+    " only codes using AI."
+    " thinks Steve Jobs invented the work force."
+    " thinks the workplace is equal opportunity."
+    " only calls it South Korean food."
+    " is recovering from alcoholism by drinkinng non-alcoholic hand sanitizer."
+    "'s insta bio says \"horse girl\""
+    " DoorDashes hibachi."
+    " only eats ramen so they can save up for hobby spending."
+    " manages their money poorly."
+    " thinks everyone has a lisp because they mispronounce Ross IRA."
+    " waits for a director at the pool table to give them a cue."
+    " believes everything they see on the internet."
+    " watches short-form content exclusively on Snapchat."
+    " still checks AOL."
+    " wishes BoomBot didn't exist. $_BE_BOT"
+    " brings their stuffed animals to visit the office on family day."
+    " dines and dashes regularly."
+    " just reached 50 dogs hit on the road."
+    " introduces themselves as a gamer to strangers."
+    " refuses to sit anywhere anyone has sat before them."
+    " is a germaphobe."
+    " called people 4 eyes in school."
+    " calls people on crutches 4 legs."
+    " prefaces all opinions with \"I know we're all thinking this\""
+    " loves getting mad when people disagree with them."
+    " spells could \"cld\""
+    " commits arson."
+    " is a walking HR violation."
+    " thought MOAB stood for Mother of All Boys."
+    " uses 3-space tabs."
+    " makes everyone laugh... in a bad way."
+    " is never getting promoted."
+    " always misses the trash can."
+    " thinks PEP8 is a cheer routine."
+    " brags about being good at coding."
+    " lurks in boom chat."
+    " says text acronyms in real conversations."
+    " tells jokes way after they've gotten old."
+    " is a fake fan."
+    " trash talks $(cat $_boomUsers | xargs shuf -n1 -e) non-stop."
+    " is getting their MR torn up by $(cat $_boomUsers | xargs shuf -n1 -e) as we speak."
+    " wants to sit at their desk all day."
+    " is funny lookin."
+    " watches movies with all the lights on."
+    " types their password in the terminal."
+    " randomly booms their password."
+  )
+  local hypes=(
+    " is doing a great job today."
+    "'s code just worked on the first try."
+    " remembered to check an edge case today."
+    " just mentally ran \`sed -e 's/hard/easy/' <(echo hard problem)\`"
+    " is cooking on the low."
+    " is cooking like you've never seen before."
+    " is cooking so hard they should star in The Bear."
+    " is eating."
+    " brings a lot to the team."
+    " just fixed a comment."
+    " makes everyone laugh... in a good way!"
+    " learned something new today."
+    " gained more responsibility today."
+    " makes BoomBot happy to be here. $_BE_BOT"
+    " just won a rap battle."
+    " just beat anxiety."
+    " just beat depression."
+    " practically just saved a person from drowning."
+    " deserves a promotion."
+  )
+  # Override with BOOMCFGFILE roasts and hypes
+  if [[ -n "$BOOMROASTS" ]]; then roasts=("${BOOMROASTS[@]}"); fi
+  if [[ -n "$BOOMHYPES"  ]]; then  hypes=("${BOOMHYPES[@]}");  fi
+  _chat_roast() {
+    echo boombot: $_BE_BOT $1${roasts[$RANDOM % ${#roasts[@]}]}
+  }
+  _chat_hype() {
+    echo boombot: $_BE_BOT $1${hypes[$RANDOM % ${#hypes[@]}]}
+  }
+  if [[ "$1" == "_roastcall_" ]]; then
+    _chat_roast $2
+    return
+  elif [[ "$1" == "_hypecall_" ]]; then
+    _chat_hype $2
+    return
+  fi
+
+  local cmd=
+  if [[ "${@}" =~ ^"/" ]]; then
+    cmd="$(echo ${@} | sed -ne 's/^\/\([a-z]\+\).*/\1/p')"
+  else
+    return
+  fi
+  flag=all
+  if [[ " timeout " =~ " $cmd " ]]; then
+    flag=admin
+  fi
+  case /${cmd}_${flag}_ in
+    /ascii_all_)
+      # Thanks to Tatiana for this concept
+      # Check in user's home for ascii file
+      local file
+      if [ -d "/$BOOMUSERDIR/$USER/ascii" ] && [ -f "/$BOOMUSERDIR/$USER/ascii/$2" ]; then file="/$BOOMUSERDIR/$USER/ascii/$2"; else file="$2"; fi
+
+      local bad
+      local maxlinechars=57 maxlines=35
+      if [ -z "$file" ]; then echo Expects FILE argument with ascii text; bad=yes;
+      elif [ ! -f "$file" ]; then echo $file is not a file; bad=yes;
+      elif [ ! -r "$file" ]; then echo $file is not readable; bad=yes;
+      fi
+      if [[ "$bad" == "yes" ]]; then echo boombot: $_BE_BOT $USER wants to ASCII so bad but just can\'t file >> $_boommeterLog; return; fi
+      if [ $(wc -L "$file" | awk '{print $1}') -gt $maxlinechars ]; then echo $file needs to have a max line length of $maxlinechars; bad=yes;
+      elif [ $(wc -l "$file" | awk '{print $1}') -gt $maxlines ]; then echo $file needs to have $maxlines or fewer lines; bad=yes;
+      elif [[ -n "$(diff <(cat $file) <(LC_ALL=C tr -dc '\0-\177' <$file) -q)" ]]; then echo Non-ASCII characters detected; bad=yes;
+      fi
+      if [[ "$bad" == "yes" ]]; then echo boombot: $_BE_BOT $USER is a struggling artist >> $_boommeterLog; return; fi
+      while IFS= read line; do
+        echo "[ASCII] $USER: $line" >> $_boommeterLog
+      done < <(tac "$file")
+      if [ $(($RANDOM % 3)) -eq 1 ]; then
+        echo boombot: $_BE_BOT BoomBot $(echo loves hates dreads enjoys likes despises | xargs shuf -n1 -e) that ascii >> $_boommeterLog
+      else
+        echo boombot: $(boommeter _bot that ascii) >> $_boommeterLog
+      fi
+    ;;
+    /boomstoday_all_)
+      local target
+      while IFS= read line; do
+        if [[ ! "$line" =~ " booms " && $(($RANDOM % 3)) -eq 2 && -z "$target" ]]; then
+          target=$(echo $line | awk '{print $2}')
+        fi
+        echo "boombot: $_BE_BOT $line" >> $_boommeterLog
+      done < <(tac <(echo Total booms $(stat -c %y $_boomFavor | sed -e 's/[0-9].\(..\)-\([0-9].-[0-9].\) .*/\2-\1/'): && sed -ne "2p" $_boomFavor | sed -ne "s/ /\n/gp" | grep [a-z] | sort | uniq -c | sort -nr))
+      if [ -z "$target" ]; then target=$USER; fi
+      if [[ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomFavor) +%d)" == "$(TZ=$BOOMTZ date +%d)" ]]; then
+        echo boombot: $_BE_BOT BoomBot $(echo thinks knows expects decided votes hopes | xargs shuf -n1 -e) $target will get \
+          $(echo more max revoked invalid 100 75 50 infinite negative super BoomBot | xargs shuf -n1 -e) booms today >> $_boommeterLog
+      else
+        echo boombot: $_BE_BOT These stats are $(echo old cooked trash deprecated thrashed clapped ancient archaic cringy | xargs shuf -n1 -e)! \
+          $(echo Somebody $target Tim BoomBot Kubasik | xargs shuf -n1 -e) needs to boom today! >> $_boommeterLog
+      fi
+    ;;
+    /corecarl_all_) # not in help
+      local hour=$(TZ=$BOOMTZ date +%H)
+      if [[ ${hour#0} -lt 15 && ${hour#0} -ge 9 ]]; then
+        echo corecarl: I approve 😎 >> $_boommeterLog
+      else
+        echo corecarl: I only work from 9-3 😎 >> $_boommeterLog
+      fi
+    ;;
+    /hype_all_)
+      case /hype_$2_ in
+        /hype_me_)
+          _chat_hype $USER >> $_boommeterLog
+        ;;
+        /hype_BoomBot_) ;&
+        /hype_boomBot_) ;&
+        /hype_Boombot_) ;&
+        /hype_@boombot_) ;&
+        /hype_boombot_)
+          _chat_hype BoomBot >> $_boommeterLog
+        ;;
+        /hype__)
+          echo boombot: $_BE_BOT BoomBot is sure $USER can use /hype if they try hard enough! >> $_boommeterLog
+          echo $_BE_BOT Give me a user to hype up! $_BE_BOT
+        ;;
+        *)
+          if [[ " $(cat $_boomUsers | xargs) " =~ " ${2#@} " ]]; then 
+            if [[ $(( $RANDOM % 70 )) -eq 3 ]]; then
+              _bbmReward "Thanks for hyping up ${2#@}!"
+              _chat_hype ${2#@} >> $_boommeterLog
+            elif [[ $(( $RANDOM % 70 )) -eq 33 ]]; then
+              _bbmReward "You've earned a break!"
+              _chat_hype ${2#@} >> $_boommeterLog
+            else
+              _chat_hype ${2#@} >> $_boommeterLog
+            fi
+          else
+            echo boombot: $_BE_BOT $USER wants to hype up $2! They don\'t boom, but BoomBot is sure they\'re great!! >> $_boommeterLog
+            echo $_BE_BOT BoomBot only hypes up boomusers $_BE_BOT
+          fi
+        ;;
+      esac
+    ;;
+    /joke_all_)
+      echo boombot: $_BE_BOT ${jokes[$RANDOM % ${#jokes[@]}]} >> $_boommeterLog
+    ;;
+    /meter_all_)
+      if [[ -n "$2" ]]; then
+        echo boombot: $(boommeter _bot ${@:2}) >> $_boommeterLog
+      else
+        echo boombot: $_BE_BOT BoomBot is ready to bring the BOOM! $_BE_BOOM >> $_boommeterLog
+        echo $_BE_BOT Give me something to rank on the boom meter! $_BE_BOT
+      fi
+    ;;
+    /patch_all_)
+      echo boombot: $_BE_BOT The latest BOOM patch is $(boom patchnotes current) >> $_boommeterLog
+      if [[ "$BOOMPATCH" != "$(boom patchnotes current)" ]]; then
+        echo boombot: $_BE_BOT $USER is so behind, they\'re still on patch $BOOMPATCH! >> $_boommeterLog
+      fi
+    ;;
+    /rarity_all_)
+      local evalarg=2 odds=15
+      if [[ "$2" == "fav" ]]; then evalarg=3; odds=10; fi
+      if [[ "${!evalarg}" =~ ^[0-9]+$ ]]; then
+        echo boombot: $_BE_BOT $(_drought_rarity ${!evalarg} $odds) >> $_boommeterLog
+      elif [[ "$USER" == "$(sed -n 1p $_boomFavor)" ]]; then
+        echo boombot: $_BE_BOT $(_drought_rarity $(cat $_boomDrought) 10 | sed "s/A/$USER's/") >> $_boommeterLog
+      else
+        echo boombot: $_BE_BOT $(_drought_rarity $(cat $_boomDrought) | sed "s/A/$USER's/") >> $_boommeterLog
+      fi
+    ;;
+    /roast_all_)
+      case /roast_$2_ in
+        /roast_me_)
+          if [[ "$USER" == "$(sed -ne 1p $_boomFavor)" ]]; then
+            _chat_hype $USER >> $_boommeterLog
+            echo $_BE_BOT I\'m not roasting my favorite! $_BE_BOT
+          else
+            _chat_roast $USER >> $_boommeterLog
+          fi
+        ;;
+        /roast_BoomBot_) ;&
+        /roast_boomBot_) ;&
+        /roast_Boombot_) ;&
+        /roast_@boombot_) ;&
+        /roast_boombot_)
+          _chat_roast BoomBot >> $_boommeterLog
+        ;;
+        /roast__)
+          echo boombot: $_BE_BOT $USER can\'t even use /roast! >> $_boommeterLog
+          echo $_BE_BOT Give me a user to roast! $_BE_BOT
+        ;;
+        *)
+          if [[ " $(cat $_boomUsers | xargs) " =~ " ${2#@} " ]]; then 
+            if [[ $(( $RANDOM % 70 )) -eq 3 ]]; then
+              echo boombot: $_BE_BOT HA! $USER tried to roast ${2#@}... get back to work! >> $_boommeterLog
+            elif [[ $(( $RANDOM % 70 )) -eq 33 ]]; then
+              echo boombot: $_BE_BOT $USER needs to go touch grass or something. >> $_boommeterLog
+            else
+              if [[ "${2#@}" == "$(sed -ne 1p $_boomFavor)" ]]; then
+                echo $_BE_BOT I\'m not roasting my favorite! $_BE_BOT
+                _chat_hype ${2#@} >> $_boommeterLog
+              else
+                _chat_roast ${2#@} >> $_boommeterLog
+              fi
+            fi
+          else
+            echo boombot: $_BE_BOT $USER tried to roast $2! They don\'t even boom! >> $_boommeterLog
+            echo $_BE_BOT BoomBot only roasts boomusers $_BE_BOT
+          fi
+        ;;
+      esac
+    ;;
+    /smell_all_) # not in help
+      echo cousinangelo: It\'s a piece of provolone! 🧀 >> $_boommeterLog
+    ;;
+    /text_all_)
+      local maxlinechars=53
+      local inputchars=$(wc -m <(echo "${@:2}") | awk '{print $1}')
+      local charlen=$(($(($inputchars-1))*4))
+      if [ $charlen -gt $maxlinechars ]; then
+        if [ $(($RANDOM%2)) -eq 1 ]; then
+          echo boombot: $_BE_BOT $USER is too verbose for BoomBot >> $_boommeterLog
+        else
+          echo boombot: $_BE_BOT $USER talks too much >> $_boommeterLog
+        fi
+        echo $_BE_BOT You are limited to $(($maxlinechars/4)) characters $_BE_BOT
+        return
+      fi
+
+      local word charidx
+      local firstline=()
+      local secondline=()
+      local thirdline=()
+      local font=$(echo Clean Ugly | xargs shuf -n1 -e)
+      for word in "${@:2}"; do
+        for charidx in $(seq 0 $((${#word}-1))); do
+          local char=${word:$charidx:1};
+          if [ -n "$(_text2ascii$font $char)" ]; then
+            firstline+=("$(_text2ascii$font $char | sed -n 1p)")
+            secondline+=("$(_text2ascii$font $char | sed -n 2p)")
+            thirdline+=("$(_text2ascii$font $char | sed -n 3p)")
+          else
+            firstline+=(" ")
+            if [[ "$font" == "Clean" ]]; then
+              secondline+=(" ")
+              thirdline+=("$char")
+            else
+              secondline+=("$char")
+              thirdline+=(" ")
+            fi
+          fi
+        done;
+        firstline+=(" ")
+        secondline+=(" ")
+        thirdline+=(" ")
+      done
+      if [ $(wc -m <(echo "${firstline[@]}") | awk '{print $1}') -gt $maxlinechars ]; then 
+        # There's a better way to do this but Ugly has standardized size so just regenerate if wrong
+        firstline=()
+        secondline=()
+        thirdline=()
+        font=Ugly
+        for word in "${@:2}"; do
+          for charidx in $(seq 0 $((${#word}-1))); do
+            local char=${word:$charidx:1};
+            if [ -n "$(_text2ascii$font $char)" ]; then
+              firstline+=("$(_text2ascii$font $char | sed -n 1p)")
+              secondline+=("$(_text2ascii$font $char | sed -n 2p)")
+              thirdline+=("$(_text2ascii$font $char | sed -n 3p)")
+            else
+              firstline+=(" ")
+              secondline+=("$char")
+              thirdline+=(" ")
+            fi
+          done;
+          firstline+=(" ")
+          secondline+=(" ")
+          thirdline+=(" ")
+        done
+      fi
+
+      echo "boombot: $_BE_BOT ${thirdline[@]}" | sed -e 's/\\/\\/g' >> $_boommeterLog
+      echo "boombot: $_BE_BOT ${secondline[@]}" | sed -e 's/\\/\\/g' >> $_boommeterLog
+      echo "boombot: $_BE_BOT ${firstline[@]}" | sed -e 's/\\/\\/g' >> $_boommeterLog
+      if [ -n "$_envcall_" ]; then
+        echo "   boombot: $_BE_BOT ${firstline[@]}" | sed -e 's/\\/\\/g'
+        echo "   boombot: $_BE_BOT ${secondline[@]}" | sed -e 's/\\/\\/g'
+        echo "   boombot: $_BE_BOT ${thirdline[@]}" | sed -e 's/\\/\\/g'
+      fi
+    ;;
+    /timeout_admin_)
+      if [[ -z "$2" ]]; then
+        echo boombot: $_BE_BOT $USER is trying to time out nobody! >> $_boommeterLog
+        echo $_BE_BOT BoomBot expects /timeout USER $_BE_BOT
+        return
+      elif [[ " $BOOMADMINS " =~ " ${2#@} " ]]; then
+        echo boombot: $_BE_BOT $USER is trying to time out an admin! >> $_boommeterLog
+        echo $_BE_BOT Admins can\'t be timed out! $_BE_BOT
+        return
+      elif [[ " $USER me " =~ " ${2#@} " ]]; then
+        echo boombot: $_BE_BOT $USER is trying to time out themselves! >> $_boommeterLog
+        echo $_BE_BOT That doesn\'t seem like a great idea... $_BE_BOT
+        return
+      elif [[ " BoomBot Boombot boomBot boombot " =~ " ${2#@} " ]]; then
+        echo boombot: $_BE_BOT $USER is trying to time out BoomBot! BoomBot just works here! $_BE_BOT >> $_boommeterLog
+        echo $_BE_BOT Watch it, buddy... $_BE_BOT
+        return
+      fi
+
+      if [[ " $BOOMADMINS " =~ " $USER " && " $(cat $_boomUsers | xargs) " =~ " ${2#@} " ]]; then
+        echo boombot: $_BE_BOT $USER timed out ${2#@}... do better $_BE_HOLE >> $_boommeterLog
+        echo ${2#@} $(TZ=$BOOMTZ date -u +%s) >> $_boomTimeout
+        if [ -w "/$BOOMUSERDIR/${2#@}/$BOOMINSTALL/.boomnotify" ]; then
+          echo You have been timed out by $USER $_BE_HOLE >> /$BOOMUSERDIR/${2#@}/$BOOMINSTALL/.boomnotify
+        fi
+      elif [[ " $BOOMADMINS " =~ " $USER " ]]; then
+        echo boombot: $_BE_BOT $USER can\'t type but someone\'s in trouble! >> $_boommeterLog
+      else
+        echo boombot: $_BE_BOT $USER thinks they\'re a boom admin... get real! >> $_boommeterLog
+      fi
+    ;;
+    /total_all_)
+      if [[ -n "${2#@}" && " $(cat $_boomUsers | xargs) " =~ " ${2#@} " ]]; then
+        local rankfile=/$BOOMUSERDIR/${2#@}/$BOOMINSTALL/.boomrankings
+        if [ -r "$rankfile" ]; then
+          echo boombot: $_BE_BOT ${2#@} has boomed a total of $(echo $(($(wc -w $rankfile | awk '{print $1}')-$(wc -l $rankfile | awk '{print $1}')))) times! >> $_boommeterLog
+        else
+          echo Error reading file for user ${2#@}
+        fi
+      elif [[ " full all " =~ " $2 " ]]; then
+        local fulltot=0
+        local rankfile=
+        for user in $(cat $_boomUsers | xargs); do
+          rankfile=/$BOOMUSERDIR/$user/$BOOMINSTALL/.boomrankings
+          [ -r $rankfile ] && fulltot=$(($fulltot+$(echo $(($(wc -w $rankfile | awk '{print $1}')-$(wc -l $rankfile | awk '{print $1}'))))))
+        done
+        echo boombot: $_BE_BOT All users have boomed a total of $fulltot times! >> $_boommeterLog
+      elif [ "${2#@}" == "boombot" ]; then
+        echo boombot: $_BE_BOT BoomBot\'s been booming since birth -- it\'s too high to count. $_BE_BOT>> $_boommeterLog
+      else
+        echo boombot: $_BE_BOT $USER has boomed a total of $(echo $(($(wc -w $_boomRankings | awk '{print $1}')-$(wc -l $_boomRankings | awk '{print $1}')))) times! >> $_boommeterLog
+      fi
+    ;;
+    /work_all_)
+      if [[ " $(cat $_boomUsers | xargs) " =~ " ${2#@} " && "$USER" != "${2#@}" ]]; then
+        if [[ $(( $RANDOM % 70 )) -eq 3 ]]; then
+          echo boombot: $_BE_BOT $USER reports that ${2#@} isn\'t working... get back to work, both of you! >> $_boommeterLog
+        else
+          echo boombot: $_BE_BOT $USER reports that ${2#@} isn\'t working... get back to work! >> $_boommeterLog
+        fi
+      elif [[ " $USER me " =~ " ${2#@} " ]]; then
+        echo boombot: $_BE_BOT $USER relies on BoomBot for motivation... embarassing! >> $_boommeterLog
+        echo $_BE_BOT BoomBot sees what you did there... $_BE_BOT
+      elif [ "boombot" == "${2#@}" ]; then
+        echo boombot: $_BE_BOT😔 BoomBot is always at work 😔$_BE_BOT >> $_boommeterLog
+        echo $_BE_BOT BoomBot doesn\'t appreciate the critique $_BE_BOT
+      else
+        echo boombot: $_BE_BOT $USER needs to get back to work themselves... >> $_boommeterLog
+        echo $_BE_BOT BoomBot only tells boomusers to get back to work $_BE_BOT
+      fi
+    ;;
+    /help_all_)
+      _chatHelpTxt
+      echo boombot: $(boommeter _bot needing help) >> $_boommeterLog
+    ;;
+    *)
+      echo boombot: $_BE_BOT $USER can\'t use BoomBot. >> $_boommeterLog
+      echo Type \`chat /help\` for boom chat help
+    ;;
+  esac
+}
+
+###Alias boomzone
+###ExcAlias _boomzone-summary
+###ExcAlias _boomzone-booms
+###ExcAlias _boomzone-chat
+###ExcAlias _boomzone-term
+# "\t${B}boomzone${N} [${B}summary${N} | ${B}booms${N} | ${B}chat${N} | ${B}term${N}]";
+# "\t\tquick alias to run \`boom zone\`";
+###
+alias boomzone='boom zone'
+
+###Alias boomstoday
+# "\t${B}boomstoday${N}\n\t\tquick alias to run \`boom board today\`";
+###
+alias boomstoday='while IFS= read line; do echo "$line"; done < <(boom board today)'
+
+# Completion
+_boom() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  if [[ " /timeout /total /roast /work /hype " =~ " $3 " && " ${COMP_WORDS[1]} " =~ " chat " && ("${#COMP_WORDS[@]}" == "4" || ("${#COMP_WORDS[@]}" == "5" && "${COMP_WORDS[2]}" == "cipher")) ]]; then
+    local conditionals=()
+    if [[  " /total " == " $3 " ]]; then conditionals+=($(echo -n all)); fi
+    COMPREPLY=($(compgen -W "${conditionals[@]} me boombot $(cat $_boomUsers)" -- ${2}));
+    if [[ "$2" =~ ^"@" ]]; then
+      COMPREPLY=($(compgen -W "$(cat $_boomUsers | sed -e 's/^ /@/') @boombot" -- ${2}));
+      return
+    fi
+    return
+  elif [[ " /rarity " =~ " $3 " && " ${COMP_WORDS[1]} " =~ " chat " && ("${#COMP_WORDS[@]}" == "4" || ("${#COMP_WORDS[@]}" == "5" && "${COMP_WORDS[2]}" == "cipher")) ]]; then
+    # Doing it like this so we can just fill out conditionals per command as the list expands
+    local conditionals=()
+    if [[  " /rarity " == " $3 " ]]; then conditionals+=($(echo -n fav)); fi
+    COMPREPLY=($(compgen -W "${conditionals[@]}" -- ${2}));
+  fi
+  if [[ "$2" =~ ^"@" && " ${COMP_WORDS[1]} " =~ " chat " ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomUsers | sed -e 's/^ /@/') @everyone @boombot" -- ${2}));
+    return
+  fi
+  if [[ "$2" =~ ^"/" && " ${COMP_WORDS[1]} " =~ " chat " && ("${#COMP_WORDS[@]}" == "3" || ("${#COMP_WORDS[@]}" == "4" && "$3" == "cipher")) ]]; then
+    local cmdoptions=($(declare -f _chat_cmds | sed -ne '/^\s.*)$/ s/\s*\(.*\)_all_)/\1/p' | grep -v [*_]))
+    local adminoptions=($(declare -f _chat_cmds | sed -ne '/^\s.*)$/ s/\s*\(.*\)_admin_)/\1/p' | grep -v [*_]))
+    if [[ ! " $BOOMADMINS " =~ " $USER " ]]; then
+      adminoptions=()
+    fi
+    COMPREPLY=($(compgen -W "${cmdoptions[*]} ${adminoptions[*]}" -- ${2}));
+    return
+  fi
+  if [[ " /ascii " =~ " $3 " && "${#COMP_WORDS[@]}" == "4" && " ${COMP_WORDS[1]} " =~ " chat " ]]; then
+    compopt -o default
+    if [[ -d "/$BOOMUSERDIR/$USER/ascii" ]]; then
+      local asciis=($(\ls -1 /$BOOMUSERDIR/$USER/ascii))
+      COMPREPLY=($(compgen -W "${asciis[*]}" -- $2))
+    fi
+    return
+  fi
+  if [[ "edit" == "${COMP_WORDS[2]}" && " 4 5 " =~ " ${#COMP_WORDS[@]} " && " ${COMP_WORDS[1]} " =~ " chat " ]]; then
+    if [[ "${#COMP_WORDS[@]}" == "4" ]]; then
+      COMPREPLY=($(compgen -W "$(sed -ne '/^\(\[EDITED\] \)\{0,1\}'"$USER"': /s|\(\[EDITED\] \)\{0,1\}\(.*\)|\2|p' $_boommeterLog | tail -n 1 | sed -e 's/'"$USER"': //')" -- $2))
+    elif [[ "${#COMP_WORDS[@]}" == "5" ]]; then
+      COMPREPLY=($(compgen -W "$3" -- $2))
+    fi
+    return
+  fi
+  if [[ "$2" =~ ^"-" && " ${COMP_WORDS[1]} " =~ " chat " ]]; then COMPREPLY=($(_chat_emoji $2)); return; fi
+
+  local options suboptions
+  options=($(declare -f boom | sed -ne '/^\s.*)$/ s/\s*\(.*\)_)/\1/p' | grep -v [*_]))
+  suboptions=($(declare -f boom | sed -ne "\|^\s.*$3_.*_)$| s|\s*$3"'_\(.*\)_)|\1|p' | grep -v \* | grep -v '\(all\|me\)'))
+
+  if [[ "$3" == "avg" && "${#COMP_WORDS[@]}" == "2" ]]; then
+    COMPREPLY=($(cat $_boomRankings | awk '{print $1}'))
+  elif [[ "$3" == "avg" && "${#COMP_WORDS[@]}" == "3" ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomRankings | awk '{print $1}')" -- $2));
+  elif [[ "$3" == "total" && "${#COMP_WORDS[@]}" == "3" ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomUsers) all" -- $2));
+  elif [[ "${COMP_WORDS[1]}" == "drought" && "$3" == "rarity" && "${#COMP_WORDS[@]}" == "4" ]]; then
+    COMPREPLY=($(compgen -W "fav" -- $2));
+  elif [ "${#COMP_WORDS[@]}" == "2" ]; then
+    COMPREPLY=($(compgen -W "${options[*]}" -- $2));
+  elif [ "${#COMP_WORDS[@]}" == "3" ] && [[ " ${options[@]} " =~ " $3 " ]]; then
+    COMPREPLY=($(compgen -W "${suboptions[*]}" -- ${2}));
+  fi
+
+  if [[ "$3" == "board" && "${#COMP_WORDS[@]}" == "3" && -z "$COMPREPLY" ]]; then
+    COMPREPLY=($(compgen -c -- ${2})) # Complete with all possible commands
+  fi
+}
+complete -F _boom boom
+__boomavg() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  if [[ "$3" == "boomavg" && "${#COMP_WORDS[@]}" == "1" ]]; then
+    COMPREPLY=($(cat $_boomRankings | awk '{print $1}'))
+  elif [[ "$3" == "boomavg" && "${#COMP_WORDS[@]}" == "2" ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomRankings | awk '{print $1}')" -- $2));
+  fi
+}
+complete -F __boomavg boomavg
+_chat() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  COMPREPLY=()
+  if [[ "$2" =~ ^"-" ]]; then COMPREPLY=($(_chat_emoji $2)); return; fi
+
+  if [[ " /timeout /total /roast /work /hype " =~ " $3 " && ("${#COMP_WORDS[@]}" == "3" || ("${#COMP_WORDS[@]}" == "4" && "${COMP_WORDS[1]}" == "cipher")) ]]; then
+    local conditionals=()
+    if [[  " /total " == " $3 " ]]; then conditionals+=($(echo -n all)); fi
+    COMPREPLY=($(compgen -W "${conditionals[@]} me boombot $(cat $_boomUsers)" -- ${2}));
+    if [[ "$2" =~ ^"@" ]]; then
+      COMPREPLY=($(compgen -W "$(cat $_boomUsers | sed -e 's/^ /@/') @boombot" -- ${2}));
+      return
+    fi
+    return
+  elif [[ " /rarity " =~ " $3 " && ("${#COMP_WORDS[@]}" == "3" || ("${#COMP_WORDS[@]}" == "4" && "${COMP_WORDS[1]}" == "cipher")) ]]; then
+    # Doing it like this so we can just fill out conditionals per command as the list expands
+    local conditionals=()
+    if [[  " /rarity " == " $3 " ]]; then conditionals+=($(echo -n fav)); fi
+    COMPREPLY=($(compgen -W "${conditionals[@]}" -- ${2}));
+  fi
+  if [[ " /ascii " =~ " $3 " && "${#COMP_WORDS[@]}" == "3" ]]; then
+    # Tried to color ascii files separate from path completion - not working
+    #asciis=($(echo "\033[1;34m${asciis[@]}\033[00m"))
+    #asciis=(${asciis[@]/#/"\\033[1;34m"})
+    #asciis=(${asciis[@]/%/"\\033[00m"})
+    #asciis=(${asciis[@]##$2})
+    #COMPREPLY=($(for val in ${asciis[@]}; do echo -e "\033[1;31m$val\033[00m"; done))
+    #COMPREPLY+=($(_genpaths dirsfiles "$2"))
+    #compgen -P "\033[1;34m" -S "\033[00m" -W "${asciis[@]}" -- $2
+    #COMPREPLY=($(printf $(compgen -P "\033[1;34m" -S "\033[00m" -W "${asciis[*]}" -- $2))I
+    #echo ${opts[@]}
+    ##local opts=($(for val in ${asciis[@]}; do echo -e "\033[1;31m$val\033[00m"; done))
+    #COMPREPLY=($(printf "${opts[*]}"))
+    ##COMPREPLY=("${opts[@]}")
+
+    # Currently just doing file completion when ascii dir doesn't exist
+    compopt -o default
+    if [[ -d "/$BOOMUSERDIR/$USER/ascii" ]]; then
+      local asciis=($(\ls -1 /$BOOMUSERDIR/$USER/ascii))
+      COMPREPLY=($(compgen -W "${asciis[*]}" -- $2))
+    fi
+    return
+  fi
+  if [[ "edit" == "${COMP_WORDS[1]}" && " 3 4 " =~ " ${#COMP_WORDS[@]} " ]]; then
+    if [[ "${#COMP_WORDS[@]}" == "3" ]]; then
+      COMPREPLY=($(compgen -W "$(sed -ne '/^\(\[EDITED\] \)\{0,1\}'"$USER"': /s|\(\[EDITED\] \)\{0,1\}\(.*\)|\2|p' $_boommeterLog | tail -n 1 | sed -e 's/'"$USER"': //')" -- $2))
+    elif [[ "${#COMP_WORDS[@]}" == "4" ]]; then
+      COMPREPLY=($(compgen -W "$3" -- $2))
+    fi
+    return
+  fi
+  if [[ "$2" =~ ^"@" ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomUsers | sed -e 's/^ /@/') @everyone @boombot" -- ${2}));
+    return
+  fi
+  if [[ "$2" =~ ^"/" && ("${#COMP_WORDS[@]}" == "2" || ("${#COMP_WORDS[@]}" == "3" && "$3" == "cipher")) ]]; then
+    local cmdoptions=($(declare -f _chat_cmds | sed -ne '/^\s.*)$/ s/\s*\(.*\)_all_)/\1/p' | grep -v [*_]))
+    local adminoptions=($(declare -f _chat_cmds | sed -ne '/^\s.*)$/ s/\s*\(.*\)_admin_)/\1/p' | grep -v [*_]))
+    if [[ ! " $BOOMADMINS " =~ " $USER " ]]; then
+      adminoptions=()
+    fi
+    COMPREPLY=($(compgen -W "${cmdoptions[*]} ${adminoptions[*]}" -- ${2}));
+    return
+  fi
+
+  local options
+  options=($(declare -f boom | sed -ne '/^\s.*chat_.*_)$/ s/\s*chat_\(.*\)_)/\1/p' | grep -v \*))
+  if [ "${#COMP_WORDS[@]}" == "2" ]; then
+    COMPREPLY=($(compgen -W "${options[*]}" -- $2));
+  fi
+}
+_chat_emoji() {
+  local options=()
+  local overall=()
+  local emojireplace cur
+  # replace if ends with - as well
+
+  if [[ "${1}" == "${1#-}" ]]; then return;
+  elif [[ "${1}" == "-${1//-}-" ]]; then
+    emojireplace=$(sed -ne '/'"$1"'\?$/p' $_boomEmojis | awk '{print $1}')
+    if [ -n "$emojireplace" ]; then
+      echo $emojireplace
+      return
+    fi
+  fi
+
+  options=($(sed -ne 's/.* \('"$1"'.*\)-$/\1/p' $_boomEmojis))
+  if [ "${#options[@]}" -eq "1" ]; then
+    emojireplace=$(sed -ne '/'"$options"'-\?$/p' $_boomEmojis | awk '{print $1}')
+    if [ -n "$emojireplace" ]; then
+      echo $emojireplace
+      return
+    fi
+  fi
+
+  # Handle -$- evaluation with sed - not pretty but gets the job done
+  options=(${options[@]/%/-})
+  compgen -W "${options[*]}" -- "${1}" | sed -e 's/-himBHs/-$-/'
+}
+complete -F _chat chat
+__boombot() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  local options
+  options=($(declare -f boombot | sed -ne '/^\s.*)$/ s/\s*\(.*\)_)/\1/p' | grep -v [*_] | grep -v env))
+
+  if [ "${#COMP_WORDS[@]}" == "2" ]; then
+    COMPREPLY=($(compgen -W "${options[*]}" -- $2));
+  fi
+}
+complete -F __boombot boombot
+_boomzone() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+  if [ "${#COMP_WORDS[@]}" == "2" ]; then
+    COMPREPLY=($(compgen -W "summary booms chat" -- $2))
+  fi
+}
+complete -F _boomzone boomzone
+
+BOOMPATCH=$(boom patchnotes current)
+
+# Source other boomrc files
+if [ -r "/$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomdocsrc" ]; then
+  # Boom docs
+  source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomdocsrc
+fi
+if [ -r "/$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomalphrc" ]; then
+  # Boom text -> ascii
+  source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomalphrc
+fi
+if [ -r "/$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomsimplerc" ]; then
+  # Boom exec/ssh
+  source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomsimplerc
+fi
+if [ -r "/$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boombarrc" ]; then
+  # Boom bar
+  source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boombarrc
+fi
+if [ -r "/$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomdevrc" ]; then
+  # Boom dev - not in BOOMRCS by default
+  # ln -s ../.boomdevrc . in BOOMRCS directory to activate
+  source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomdevrc
+fi
+
+# Next up
+#TODO: update site with customizable order/boards - in work
+#TODO: Add optional separate site port to boomcfg - optional config in general
+#TODO: default roasts and hypes and remarks but also can add with separate configs
+
+# Short term todos - roughly in order
+#TODO: bar BTODAY resets if new day?
+#TODO: boom quest items - implementation of rewards/collectibles - this gamification is gonna be 3.0 probably
+#TODO: boombar - boombar notify? idea for temporary changes to boombar that revert back to prefix after x commands
+#TODO: /warning or /suspicious - fun to implement for admins but no real necessity... yet
+#TODO: hype occasionally roasts and roast occasionally hypes -- maybe? might just be annoying
+#TODO: /text numbers?
+#TODO: @everyone -<specific user>
+#TODO: bug where exit doesn't exit on dead boomsession (one of 2 in same place closing)
+
+# Long term todos
+#TODO: more boombot remarks
+#TODO: boombar - add boombar options
+#TODO: assess additional args with boomssh/exec
+#TODO: use more shell builtins for optimization - $EPOCHSECONDS instead of some dates, $BASH_REMATCH instead of some seds
+#TODO: maybe reward if X+ booms are imported at once to make up for missing super boom milestones (25 multiples)
+#TODO: de-duplicate chat completion by calling _boom with current args similiar to magic alias function - maybe just change args checked by if called with chat or boom
+#TODO: configure BOOMDEFAULTTIMEOUT in BOOMCFGFILE
+
+#CANCELLEDTODO: happy/sad boombot based on boombot mode activity: lots of work for what
+#CANCELLEDTODO: more boom mult situations?: need to not overdo mult... goal is avgs under 5 mostly, don't want to cheapen super booms
+#CANCELLEDTODO: timestamps saved with chats?: not planned for multiple reasons
+#CANCELLEDTODO: boombot takes boom tax of 2 on every random boom when timed out?: users shouldn't have to lose score
+#CANCELLEDTODO: boom config command to view and toggle env vars like silent: just not necessary yet
+#CANCELLEDTODO: use lame to play BOOM or we bring the boom on rand hits if user configures for that?: too much for boomusers like us
+#CANCELLEDTODO: /timeout with duration: will probably just adjust default duration in future similar to fav entries
+#CANCELLEDTODO: /work for multiple people - nice instead of running 2 /work commands: this is too much /work
+
+#KNOWNBUG: chat /text is upside down in zone chat display - escape it and make it ascii?
+#KNOWN"BUG": because we are keeping this "feature", new terminals can boom on startup and the first empty line after opening terminals can boom
+

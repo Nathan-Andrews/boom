@@ -1,0 +1,101 @@
+#!/usr/bin/env bash
+
+###Function boomdev
+# "\t${B}boomdev${N} <cmd> <opts>";
+# "\t\tcommand to simplify the boom development workflow";
+# "\t\tuse options below in place of <cmd> <opts>";
+# "";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman _boomdev-.*")";
+# "\t\t${B}help${N}\n\t\t\tprints this help message";
+###
+###SubFunction _boomdev-commit
+# "\t${B}boomdev-commit${N}";
+# "\t\tpreferred way to commit to repository";
+# "\t\tgenerates readme and adds it before commiting";
+###
+###SubFunction _boomdev-generate
+# "\t${B}boomdev-generate${N}";
+# "\t\tonly generates readme";
+###
+boomdev() {
+  _generatereadme() {
+    if [ "${PWD}" != "/$BOOMUSERDIR/$BOOMBOSS/${BOOMRCS%/*}" ]; then
+      echo ERROR: Generate README from boom repo top level
+      return 1
+    fi
+    if [ "${PWD}" != "$(git rev-parse --show-toplevel)" ]; then
+      echo ERROR: Generate README from boom repo top level
+      return 1
+    fi
+
+    local barron=
+    if [[ -n "$BOOMBARSTATE" ]]; then
+      boombar exit
+      barron=yes
+    fi
+    local devon=
+    if [ -f "$PWD/rcs/.boomdevrc" ]; then
+      rm $PWD/rcs/.boomdevrc
+      devon=yes
+    fi
+    cat ./.boomreadme/README_intro.md > README.md
+
+    echo >> README.md
+    echo "## Docs" >> README.md
+    echo The below boomdocs output was generated as of patch $(boom patchnotes current): >> README.md
+    echo >> README.md
+    echo '```text' >> README.md
+    BOOMCFGFILE=$PWD/.boomreadme/README.config \boomdocs noBorN | sed 's/    //' >> README.md # sed is to get rid of weird 4 space bug on recursive docs
+    echo '```' >> README.md
+
+    echo >> README.md
+    echo "## Patch Notes" >> README.md
+    echo The below patchnotes output was generated as of patch $(boom patchnotes current): >> README.md
+    echo >> README.md
+    echo '```text' >> README.md
+    boom patchnotes full | tac >> README.md
+    echo '```' >> README.md
+
+    git add README.md
+    [[ -n "$barron" ]] && boombar
+    [[ -n "$devon"  ]] && ln -s ../.boomdevrc rcs/ 
+
+    return 0
+  }
+
+  case "$1_" in
+    commit_)
+      pushd /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/..
+      _generatereadme && git commit
+      popd
+    ;;
+    generate_)
+      pushd /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/..
+      _generatereadme
+      popd
+    ;;
+    help_)
+      boomdocs boomdev
+    ;;
+    *)
+      echo -e "Error: option \"$1\" not found"
+      boomdocs boomdev
+    ;;
+  esac
+}
+
+_boomdev() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
+
+  local options suboptions
+  options=($(declare -f boomdev | sed -ne '/^\s.*)$/ s/\s*\(.*\)_)/\1/p' | grep -v [*_]))
+  suboptions=($(declare -f boomdev | sed -ne "\|^\s.*$3_.*_)$| s|\s*$3"'_\(.*\)_)|\1|p' | grep -v \*))
+
+  if [ "${#COMP_WORDS[@]}" == "2" ]; then
+    COMPREPLY=($(compgen -W "${options[*]}" -- $2));
+  elif [ "${#COMP_WORDS[@]}" == "3" ] && [[ " ${options[@]} " =~ " $3 " ]]; then
+    COMPREPLY=($(compgen -W "${suboptions[*]}" -- ${2}));
+  fi
+}
+complete -F _boomdev boomdev
+
