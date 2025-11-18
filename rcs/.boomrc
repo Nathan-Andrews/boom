@@ -190,6 +190,9 @@
 # 2.6.3  - boom emojis entirely customizable - boom conf added but not in docs
 # 2.6.4  - boom roasts and hypes customizable in BOOMCFGFILE
 # 2.6.5  - `boom conf` command documented
+# 2.6.6  - boom emoji being different in two simultaneous boom sessions will no longer lose booms on export
+# 2.7.0  - boom boards have customizable columns now
+# 2.7.1  - `chat /roast random` and `chat /hype random` commands implemented
 
 DOOMBOOM=
 # Multiple ways to have this set:
@@ -714,6 +717,8 @@ _boomquest() {
   fi
 }
 _jsonifyboomavgs() {
+  [ -z "$userList" ] && local userList=$(<$_boomUsers)
+
   echo -ne "{"
   while read user; do
     echo -ne "\"$user\": {"
@@ -731,10 +736,12 @@ _jsonifyboomavgs() {
     done < $rankfile
     echo -n erase
     echo -n "},"
-  done < $_boomUsers
+  done <<<"$userList"
   echo -ne "erase}"
 }
 _jsonifyboomfreqs() {
+  [ -z "$userList" ] && local userList=$(<$_boomUsers)
+
   echo -ne "{"
   while read user; do
     echo -ne "\"$user\": {"
@@ -750,10 +757,12 @@ _jsonifyboomfreqs() {
     done < $rankfile
     echo -n erase
     echo -n "},"
-  done < $_boomUsers
+  done <<<"$userList"
   echo -ne "erase}"
 }
 _jsonifyboomdroughts() {
+  [ -z "$userDR" ] && local userDR=$(<$_boomDroughtRecord)
+
   echo -ne "{"
   while read user; do
     echo -ne "\"$(echo $user | awk '{print $1}')\": {"
@@ -763,10 +772,12 @@ _jsonifyboomdroughts() {
     echo -ne "\"current\": \"$(cat $droughtfile)\","
     echo -n erase
     echo -n "},"
-  done < $_boomDroughtRecord
+  done <<<"$userDR"
   echo -ne "erase}"
 }
 _jsonifytopbooms() {
+  [ -z "$userList" ] && local userList=$(<$_boomUsers)
+
   count=${1:-5}
   echo -ne "{"
   while read user; do
@@ -783,7 +794,7 @@ _jsonifytopbooms() {
                             done < <(cat $rankfile | awk '{words = gsub(/ /, " ", $0); print words " " $0}' | sort -nr | head -n $count)))
     echo -n erase
     echo -n "},"
-  done < $_boomUsers
+  done <<<"$userList"
   echo -ne "erase}"
 
 }
@@ -848,8 +859,9 @@ alias boomhelp="_boomIntroTxt flag"
 ###ExcFunction _boom-board-full
 ###ExcFunction _boom-board-today
 ###ExcFunction _boom-board-top
-# "\t${B}boom-board${N} [${B}avg${N} | ${B}drought${N} | ${B}freq${N} | ${B}full${N} | ${B}today${N} | ${B}top${N} [NUM] | ${B}help${N} | CMD]";
+# "\t${B}boom-board${N} [${B}avg${N} | ${B}drought${N} | ${B}freq${N} | ${B}full${N} | ${B}today${N} | ${B}top${N} [NUM] | ${B}help${N} | CMD | ${B}-${N}] [USER USER ...]";
 # "\t\tshows boom leaderboard for all boomusers";
+# "\t\tusers will be ordered by source date, USER args, or the space-delimited BOOMTABLECOLS env var (see \`boom conf\`)";
 # "\t\twill print avg/freq/top/drought boards by default, or:";
 # "\n\t\t${B}avg${N}\n\t\t\tsee and compare user avgs of all commands randomly boomed by more than one person";
 # "\t\t${B}drought${N}\n\t\t\tsee and compare longest & current droughts";
@@ -859,6 +871,7 @@ alias boomhelp="_boomIntroTxt flag"
 # "\t\t${B}top${N}\n\t\t\tsee all-time top NUM (default 5) boomed commands for all users";
 # "\t\t${B}help${N}\n\t\t\tshow boom board help";
 # "\t\tCMD\n\t\t\tsee avg and freq boards for specific CMD for all users";
+# "\t\t${B}-${N}\n\t\t\tuse this before listing input column order for the default board command";
 ###
 ###SubFunction _boom-chat
 ###ExcFunction _boom-chat-cipher
@@ -1039,22 +1052,34 @@ boom() {
       boomavg ${@:2}
     ;;
     board_)
+      # Variables that allow column manipulation
+      local userList=$(<$_boomUsers)
+      local userDR=$(<$_boomDroughtRecord)
+
+      if [ $# -ge 3 ]; then
+        userList=$(for word in ${@:3}; do sed -n "/^ $word$/p" $_boomUsers; done)
+        userDR=$(for word in ${@:3}; do sed -n "/^ $word /p" $_boomDroughtRecord; done)
+      elif [ -n "$BOOMTABLECOLS" ]; then
+        userList=$(for word in $BOOMTABLECOLS; do sed -n "/^ $word$/p" $_boomUsers; done)
+        userDR=$(for word in $BOOMTABLECOLS; do sed -n "/^ $word /p" $_boomDroughtRecord; done)
+      fi
+
       case "board_$2_" in
         board_freq_)
           local modifier=totals
-          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          if [ $(wc -l <<<"$userList" | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
           echo
           /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomfreqs | sed -re s/,?erase//g)" 3.0 $modifier
         ;;
         board_avg_)
           local modifier=
-          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          if [ $(wc -l <<<"$userList" | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
           echo
           /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomavgs | sed -re s/,?erase//g)" .2 $modifier
         ;;
         board_drought_)
           local modifier=
-          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          if [ $(wc -l <<<"$userList" | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
           echo
           /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomdroughts | sed -re s/,?erase//g)" 3.0 $modifier
         ;;
@@ -1079,13 +1104,18 @@ boom() {
         board_top_)
           echo Top Boomed Commands Leaderboard
           echo
-          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifytopbooms ${3:-5} | sed -re s/,?erase//g)" 0.0 twoper
+          local num=5
+          for arg in $@; do
+            [[ "$arg" =~ [0-9]+ ]] && num=$arg
+          done
+          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifytopbooms $num | sed -re s/,?erase//g)" 0.0 twoper
         ;;
+        board_-_) ;&
         board__)
           local modifier=
-          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
+          if [ $(wc -l <<<"$userList" | awk '{print $1}') -eq 1 ]; then modifier=rare; fi
           local freqmodifier=totals
-          if [ $(wc -l $_boomUsers | awk '{print $1}') -eq 1 ]; then freqmodifier=rare; fi
+          if [ $(wc -l <<<"$userList" | awk '{print $1}') -eq 1 ]; then freqmodifier=rare; fi
 
           echo Average Leaderboard
           echo
@@ -1368,6 +1398,8 @@ boom() {
       _boss && echo "           \"...\")"
       _boss && echo
       echo Optional user-defined variables to set before source:
+      _boss && echo \# To globally change default user-defined vars, set them in the BOOMCFGFILE!
+      _boss && echo
       echo \# Populate this to override boom holiday emojis
       echo NOBOOMHOLIDAY=$NOBOOMHOLIDAY
       echo
@@ -1380,6 +1412,9 @@ boom() {
       echo IMPORT_EMOJI="${IMPORT_EMOJI:-$_BE_IMPORT_DEF}"
       echo EXPORT_EMOJI="${EXPORT_EMOJI:-$_BE_EXPORT_DEF}"
       echo CHECK_EMOJI="${CHECK_EMOJI:-$_BE_CHECK_DEF}"
+      echo
+      echo \# Use this to set default columns for boom boards \(format \"USER USER USER ...\"\)
+      echo BOOMTABLECOLS=\"${BOOMTABLECOLS:-$(cat $_boomUsers | xargs)}\"
       echo
       echo Commands with independent configuration:
       echo boombar conf \(boomdocs boombar\)
@@ -1610,7 +1645,7 @@ boom() {
                    boom favorite && echo &&
                    boom drought longest && echo &&
                    boom board today && echo &&
-                  /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_boomUsers=<(whoami) _jsonifytopbooms 15 | sed -re s/,?erase//g)" 0.0 twoper && echo &&
+                   /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(userList=$(whoami) _jsonifytopbooms 15 | sed -re s/,?erase//g)" 0.0 twoper && echo &&
                    echo Patch $(boom patchnotes current) && echo &&
                    echo Press \'q\' to quit)
 
@@ -1846,12 +1881,12 @@ _chatHelpTxt() {
   echo /help - BoomBot will print this!
   echo /ascii FILE - BoomBot will let you print ascii file to chat - completes with files in \~/ascii dir unless completing from top level path!
   echo /boomstoday - BoomBot will print a breakdown of how many random booms each user has received today!
-  echo /hype PERSON - BoomBot will hype up \"me\" or any \"\<boomusername\>\"!
+  echo /hype PERSON - BoomBot will hype up \(\"boombot\" \| \"me\" \| \"random\"\) or any \"\<boomusername\>\"!
   echo /joke - BoomBot will tell a joke in chat!
   echo /meter THING - BoomBot will rank THING on the boom meter!
   echo /patch - BoomBot will tell you what the latest patch number is!
   echo /rarity [fav] [NUM] - BoomBot will tell you how rare a drought streak is - add fav positional arg for favorite odds!
-  echo /roast PERSON - BoomBot will roast \"me\" or any \"\<boomusername\>\"!
+  echo /roast PERSON - BoomBot will roast \(\"boombot\" \| \"me\" \| \"random\"\) or any \"\<boomusername\>\"!
   echo /text TEXT - BoomBot will convert TEXT to ascii and put it in chat!
   echo /total [PERSON \| all] - BoomBot will say the total times you \(or PERSON\) have randomly boomed!
   echo /work PERSON - BoomBot will tell \"\<boomusername\>\" to get back to work!
@@ -2028,7 +2063,7 @@ _chat_cmds() {
     " is doing a great job today."
     "'s code just worked on the first try."
     " remembered to check an edge case today."
-    " just mentally ran \`sed -e 's/hard/easy/' <(echo hard problem)\`"
+    " just mentally ran \`sed -e 's/hard/easy/' <<<\"hard problem\"\`"
     " is cooking on the low."
     " is cooking like you've never seen before."
     " is cooking so hard they should star in The Bear."
@@ -2137,6 +2172,12 @@ _chat_cmds() {
         /hype_boombot_)
           _chat_hype BoomBot >> $_boommeterLog
         ;;
+        /hype_random_)
+          local users=($(cat $_boomUsers | xargs))
+          local random=${users[$RANDOM % ${#users[@]}]}
+
+          _chat_hype $random >> $_boommeterLog
+        ;;
         /hype__)
           echo boombot: $_BE_BOT BoomBot is sure $USER can use /hype if they try hard enough! >> $_boommeterLog
           echo $_BE_BOT Give me a user to hype up! $_BE_BOT
@@ -2203,6 +2244,22 @@ _chat_cmds() {
         /roast_@boombot_) ;&
         /roast_boombot_)
           _chat_roast BoomBot >> $_boommeterLog
+        ;;
+        /roast_random_)
+          local users=($(cat $_boomUsers | xargs))
+          local random=${users[$RANDOM % ${#users[@]}]}
+
+          _chat_roast $random >> $_boommeterLog
+          if [[ "$random" == "$(sed -ne 1p $_boomFavor)" ]]; then
+            echo boombot: $_BE_BOT HEY! $USER tricked BoomBot into roasting BoomBot\'s favorite! >> $_boommeterLog
+
+            if [[ "$random" != "$USER" ]]; then
+              echo $USER: /roast $USER \(Revenge! $_BE_BOT\) >> $_boommeterLog
+              _chat_roast $USER >> $_boommeterLog
+            else
+              echo boombot: $_BE_BOT BoomBot can\'t even enact revenge... >> $_boommeterLog
+            fi
+          fi
         ;;
         /roast__)
           echo boombot: $_BE_BOT $USER can\'t even use /roast! >> $_boommeterLog
@@ -2410,6 +2467,7 @@ _boom() {
   if [[ " /timeout /total /roast /work /hype " =~ " $3 " && " ${COMP_WORDS[1]} " =~ " chat " && ("${#COMP_WORDS[@]}" == "4" || ("${#COMP_WORDS[@]}" == "5" && "${COMP_WORDS[2]}" == "cipher")) ]]; then
     local conditionals=()
     if [[  " /total " == " $3 " ]]; then conditionals+=($(echo -n all)); fi
+    if [[  " /roast /hype " =~ " $3 " ]]; then conditionals+=($(echo -n random)); fi
     COMPREPLY=($(compgen -W "${conditionals[@]} me boombot $(cat $_boomUsers)" -- ${2}));
     if [[ "$2" =~ ^"@" ]]; then
       COMPREPLY=($(compgen -W "$(cat $_boomUsers | sed -e 's/^ /@/') @boombot" -- ${2}));
@@ -2493,6 +2551,7 @@ _chat() {
   if [[ " /timeout /total /roast /work /hype " =~ " $3 " && ("${#COMP_WORDS[@]}" == "3" || ("${#COMP_WORDS[@]}" == "4" && "${COMP_WORDS[1]}" == "cipher")) ]]; then
     local conditionals=()
     if [[  " /total " == " $3 " ]]; then conditionals+=($(echo -n all)); fi
+    if [[  " /roast /hype " =~ " $3 " ]]; then conditionals+=($(echo -n random)); fi
     COMPREPLY=($(compgen -W "${conditionals[@]} me boombot $(cat $_boomUsers)" -- ${2}));
     if [[ "$2" =~ ^"@" ]]; then
       COMPREPLY=($(compgen -W "$(cat $_boomUsers | sed -e 's/^ /@/') @boombot" -- ${2}));

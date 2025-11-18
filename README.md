@@ -46,8 +46,6 @@ The .boomrc will add missing required config variables to BOOMCFGFILE automatica
 
 Check out other optional BOOMCFGFILE and user-defined config variables using the `boom conf` command!
 
-To globally change default emojis, set them in the BOOMCFGFILE!
-
 ## RC Breakdown
 
 There are currently 5 .boom\*rc files sourced by default in the boom rc suite. Here is a list of all 7 .boom\*rc files and a brief description of what they each contain:
@@ -71,7 +69,7 @@ Again, the recommended way to source these is by creating a custom .boomrc file 
 
 
 ## Docs
-The below boomdocs output was generated as of patch 2.6.5:
+The below boomdocs output was generated as of patch 2.7.1:
 
 ```text
 Commands in the .boomrc suite:
@@ -124,8 +122,9 @@ Commands in the .boomrc suite:
 
 		avg [CMD]
 			runs boomavg with optional CMD arg
-		board [avg | drought | freq | full | today | top [NUM] | help | CMD]
+		board [avg | drought | freq | full | today | top [NUM] | help | CMD | -] [USER USER ...]
 			shows boom leaderboard for all boomusers
+			users will be ordered by source date, USER args, or the space-delimited BOOMTABLECOLS env var (see `boom conf`)
 			will print avg/freq/top/drought boards by default, or:
 	
 			avg
@@ -144,6 +143,8 @@ Commands in the .boomrc suite:
 				show boom board help
 			CMD
 				see avg and freq boards for specific CMD for all users
+			-
+				use this before listing input column order for the default board command
 		chat [/<cmd> | cipher | decipher | edit | env | clear | timeout | help] [COMMENT]
 			post COMMENT to the boom zone (http://<host>:BOOMPORT)
 			use `chat` alias to be faster
@@ -280,9 +281,12 @@ Commands in the .boomrc suite:
 ```
 
 ## Patch Notes
-The below patchnotes output was generated as of patch 2.6.5:
+The below patchnotes output was generated as of patch 2.7.1:
 
 ```text
+# 2.7.1  - `chat /roast random` and `chat /hype random` commands implemented
+# 2.7.0  - boom boards have customizable columns now
+# 2.6.6  - boom emoji being different in two simultaneous boom sessions will no longer lose booms on export
 # 2.6.5  - `boom conf` command documented
 # 2.6.4  - boom roasts and hypes customizable in BOOMCFGFILE
 # 2.6.3  - boom emojis entirely customizable - boom conf added but not in docs

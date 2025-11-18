@@ -46,8 +46,6 @@ The .boomrc will add missing required config variables to BOOMCFGFILE automatica
 
 Check out other optional BOOMCFGFILE and user-defined config variables using the `boom conf` command!
 
-To globally change default emojis, set them in the BOOMCFGFILE!
-
 ## RC Breakdown
 
 There are currently 5 .boom\*rc files sourced by default in the boom rc suite. Here is a list of all 7 .boom\*rc files and a brief description of what they each contain:
