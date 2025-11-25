@@ -35,6 +35,8 @@ source $configfile
 
 echo Copying over .boomserver from template...
 \cp -Rvf $EXPECTED_BOOMRCS/.boomserver $EXPECTED_BOOMINSTALL || exit 1
+mkdir -pv $EXPECTED_BOOMINSTALL/.boomserver/data/env || exit 1
+chmod 777 $EXPECTED_BOOMINSTALL/.boomserver/data/env || exit 1
 
 backendfile=$EXPECTED_BOOMINSTALL/.boomserver/.boombackend.py
 echo Configuring $backendfile using boom config...

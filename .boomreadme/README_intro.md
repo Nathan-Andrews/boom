@@ -63,6 +63,18 @@ There are currently 5 .boom\*rc files sourced by default in the boom rc suite. H
 
 Again, the recommended way to source these is by creating a custom .boomrc file in an easy-to-access place that sets BOOMCFGFILE and sources the repo's .boomrc file.
 
+## Updates
+
+To update boom, simply `git pull` the latest changes, read the patch notes, and re-source the `.boomrc` to make sure nothing has changed.
+
+If the site is in use and the site files have changed since the last update, copy over the changed files to the BOOMINSTALL location. Alternatively, backup `data/` in `BOOMINSTALL/.boomserver` and re-run the `.siteconfig.bash` script. This will set up the server fresh based on the current state of the generic repo server files, and you can move `data/` back to restore the configs.
+
+## Requirements
+
+To run the boom, you will need `bash 4.4` or higher, as well as typical bash utilities, such as `sed`, `awk`, `date`, and `curl`.
+
+To run the server, you will need `python3.9` or higher, with the `bcrypt` and `flask` packages installed.
+
 ## 
 
 💥💥💥💥💥 Have fun booming! 💥💥💥💥💥

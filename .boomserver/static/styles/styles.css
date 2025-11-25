@@ -1,0 +1,193 @@
+body {
+    cursor: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 100 100"%3E%3Ctext y="78" font-size="82"%3E💥%3C/text%3E%3C/svg%3E') 16 16, auto;
+    background-color: #292d3e;
+    color: #bfc7d5;
+    display: flex;
+    max-height: 100vh;
+    overflow-y: hidden;
+    flex-direction: column;
+    -webkit-user-select: none; /* Safari */
+    -ms-user-select: none; /* IE 10 and IE 11 */
+    user-select: none; /* Standard syntax */
+}
+
+.container {
+    /* display: flex; */
+    display: none;
+    flex-direction: row;
+    /* max-height: 100%; */
+    overflow-x: auto;
+    overflow-y: auto;
+    scrollbar-width: thin;
+    scrollbar-color: #292d3e #212432;
+    scrollbar-track-color: #f07178;
+}
+
+.content {
+    /* display: none; */
+    display: flex;
+    flex-direction: column;
+}
+
+pre {
+    background-color: #212432;
+    color: #bfc7d5;
+    padding: 10px;
+    border-radius: 5px;
+    display: inline-block;
+    white-space: pre-wrap;
+    word-wrap: break-word;
+}
+
+.output {
+    white-space: pre;
+    width: 40vw;
+    overflow-x: scroll;
+    text-align: center;
+}
+
+.log-file-content {
+    /* white-space: pre;
+    overflow-x: scroll; */
+    overflow-y: auto;
+}
+
+.boommeter-file-content {
+    /* white-space: pre; */
+    overflow-y: auto;
+}
+
+.file-content {
+    /* display: none; */
+    display: flex;
+    flex-direction: column;
+    width: 30vw;
+    padding-left: 10px;
+    border-radius: 5px;
+    /* max-height: auto; */
+    /* overflow: hidden; */
+}
+
+.username {
+    font-weight: bold;
+    color: #c792ea;
+}
+
+.username-bot {
+    font-weight: bold;
+    color: #82aaff;
+}
+
+.username-fav {
+    font-weight: bold;
+    color: #ffcb6b;
+}
+
+.table-row-odd {
+    color: #bfc7d5;
+    background-color: #212432;
+}
+
+.table-row-even {
+    color: #bfc7d5;
+    background-color: #30364c;
+}
+
+.table-body {
+    position: relative;
+}
+
+.table-head {
+    top: -10px;
+    position: sticky;
+    z-index: 1;
+    background-color: #212432;
+    display: block;
+    padding-top: 10px;
+    margin-top: -10px;
+}
+
+.loading {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display:flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    backdrop-filter: blur(20px);
+    height: 100%;
+    width: 100%;
+}
+
+.loading-bar {
+    background-color: #212432;
+    color: #bfc7d5;
+    border-radius: 5px;
+}
+
+.alert {
+    position: fixed;
+    top: 0;
+    left: 0;
+    display:flex;
+    flex-direction: column;
+    text-align: center;
+    align-items: center;
+    justify-content: center;
+    z-index: 50;
+    backdrop-filter: blur(20px);
+    height: 100%;
+    width: 100%;
+}
+
+.alert-box {
+    background-color: #212432;
+    color: #bfc7d5;
+    border-radius: 5px;
+    padding-top: 15px;
+    padding-bottom: 30px;
+    padding-left: 60px;
+    padding-right: 60px;
+}
+
+.password-prompt {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    width: 100%;
+    color: #bfc7d5;
+    background-color: #292d3e;
+}
+
+.password-prompt input {
+    margin: 10px;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    background-color: #bfc7d5;
+}
+
+.password-prompt input:focus {
+    outline: none;
+    border-color: grey;
+}
+
+.password-prompt button:focus {
+    outline: none;
+    border-color: grey;
+}
+
+.password-prompt button {
+    padding: 10px 20px;
+    font-size: 16px;
+    background-color: lightgrey;
+}
+
+.hover-red:hover {
+    color:#f07178
+}
+

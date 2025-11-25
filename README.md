@@ -63,13 +63,25 @@ There are currently 5 .boom\*rc files sourced by default in the boom rc suite. H
 
 Again, the recommended way to source these is by creating a custom .boomrc file in an easy-to-access place that sets BOOMCFGFILE and sources the repo's .boomrc file.
 
+## Updates
+
+To update boom, simply `git pull` the latest changes, read the patch notes, and re-source the `.boomrc` to make sure nothing has changed.
+
+If the site is in use and the site files have changed since the last update, copy over the changed files to the BOOMINSTALL location. Alternatively, backup `data/` in `BOOMINSTALL/.boomserver` and re-run the `.siteconfig.bash` script. This will set up the server fresh based on the current state of the generic repo server files, and you can move `data/` back to restore the configs.
+
+## Requirements
+
+To run the boom, you will need `bash 4.4` or higher, as well as typical bash utilities, such as `sed`, `awk`, `date`, and `curl`.
+
+To run the server, you will need `python3.9` or higher, with the `bcrypt` and `flask` packages installed.
+
 ## 
 
 💥💥💥💥💥 Have fun booming! 💥💥💥💥💥
 
 
 ## Docs
-The below boomdocs output was generated as of patch 2.7.1:
+The below boomdocs output was generated as of patch 2.7.6:
 
 ```text
 Commands in the .boomrc suite:
@@ -112,6 +124,8 @@ Commands in the .boomrc suite:
 		this is useful to run with `chat $(bang X)` to put X booms in chat
 	boommeter THING
 		this function ranks THING on the boommeter!
+	doommeter THING
+		this function ranks THING on the doommeter...
 	boomavg [CMD]
 		this function prints your average rank and total booms for every command!
 		if CMD arg present, function will only print avg for CMD
@@ -134,7 +148,7 @@ Commands in the .boomrc suite:
 			freq
 				see and compare boom frequency for all commands randomly boomed by more than one person
 			full
-				see full chart of boom avgs/freqs/droughts including cmds only boomed by one user
+				see full chart of boom avgs and freqs including cmds only boomed by one user
 			today
 				see amount of booms each user has received today - same as `chat /boomstoday` but the output is sorted
 			top
@@ -281,11 +295,16 @@ Commands in the .boomrc suite:
 ```
 
 ## Patch Notes
-The below patchnotes output was generated as of patch 2.7.1:
+The below patchnotes output was generated as of patch 2.7.6:
 
 ```text
+# 2.7.6  - `doommeter` added
+# 2.7.5  - BOOMBOTCHATFREQ config env var added
+# 2.7.4  - chat clear only works with no further args and asks for confirmation
+# 2.7.3  - set up site user account on sourcing .boomrc
+# 2.7.2  - BOOMNOWEEKENDFAV config env var added
 # 2.7.1  - `chat /roast random` and `chat /hype random` commands implemented
-# 2.7.0  - boom boards have customizable columns now
+# 2.7.0  - boom boards have customizable columns now with completion
 # 2.6.6  - boom emoji being different in two simultaneous boom sessions will no longer lose booms on export
 # 2.6.5  - `boom conf` command documented
 # 2.6.4  - boom roasts and hypes customizable in BOOMCFGFILE

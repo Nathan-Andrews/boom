@@ -1,384 +1,71 @@
 <!DOCTYPE html>
-<!--Shoutout Nathan for styling and scripting help-->
+<!--Thanks Nathan for the entire frontend-->
 <html lang="en">
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>BOOM zone</title>
-    <style>
-      body {
-        cursor: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 100 100"%3E%3Ctext y="78" font-size="82"%3E💥%3C/text%3E%3C/svg%3E') 16 16, auto;
-        background-color: #292d3e;
-        color: #bfc7d5;
-        display: flex;
-        flex-direction: row;
-      }
-
-      .content {
-        display: none;
-      }
-
-      pre {
-        background-color: #212432;
-        color: #bfc7d5;
-        padding: 10px;
-        border-radius: 5px;
-        display: inline-block;
-        white-space: pre-wrap;
-        word-wrap: break-word;
-      }
-
-      .output {
-        white-space: pre;
-        width: 40vw;
-        overflow-x: scroll;
-      }
-
-      .file-content {
-        display: none;
-        width: 30vw;
-        padding-left: 10px;
-        border-radius: 5px;
-        max-height: auto;
-        overflow: hidden;
-      }
-
-      .table-row-odd {
-        color: #bfc7d5;
-        background-color: #212432;
-      }
-
-      .table-row-even {
-        color: #bfc7d5;
-        background-color: #30364c;
-      }
-
-      .password-prompt {
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        height: 100vh;
-        width: 100%;
-        color: #bfc7d5;
-        background-color: #292d3e;
-      }
-
-      .password-prompt input {
-        margin: 10px;
-        padding: 10px;
-        font-size: 16px;
-        border: 1px solid #ccc;
-        background-color: #bfc7d5;
-      }
-
-      .password-prompt input:focus {
-        outline: none;
-        border-color: grey;
-      }
-
-      .password-prompt button:focus {
-        outline: none;
-        border-color: grey;
-      }
-
-      .password-prompt button {
-        padding: 10px 20px;
-        font-size: 16px;
-        background-color: lightgrey;
-      }
-    </style>
-    <script src="{{ url_for('static', filename='crypto.js') }}"></script>
-    <script>
-      var fetchingBoommeter = false;
-      var fetchingBoomlog = false;
-      var runningCmd = false;
-      let apiKey = null;
-      
-      function backendPasswdCheck(passwd) {
-        return fetch('/boompass', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({ password: passwd })
-        })
-        .then(response => response.json())
-        .then(data => {
-          if (data.valid) {
-            apiKey = data.key;
-            return true;
-          } else {
-            return false;
-          }
-        }).catch(error => { console.error('Error:', error); return false; });
-      }
-
-      function setCookie(name, value, days) {
-        let expires = "";
-        if (days) {
-          const date = new Date();
-          date.setTime(date.getTime() + (days * 24 * 60 * 60 * 1000));
-          expires = "; expires=" + date.toUTCString();
-        }
-        document.cookie = name + "=" + (value || "") + expires + "; path=/";
-      }
-
-      function getCookie(name) {
-        const nameEQ = name + "=";
-        const ca = document.cookie.split(';');
-        for (let i = 0; i < ca.length; i++) {
-          let c = ca[i];
-          while (c.charAt(0) == ' ') c = c.substring(1, c.length);
-          if (c.indexOf(nameEQ) == 0) return c.substring(nameEQ.length, c.length);
-        }
-        return null;
-      }
-
-      function eraseCookie(name) {
-        document.cookie = name + '=; Max-Age=-99999999;';
-      }
-
-      function checkCookie(name) {
-        const cookie = getCookie(name);
-        return cookie !== null;
-      }
-
-      async function checkPassword() {
-        if (await backendPasswdCheck(CryptoJS.SHA256(document.getElementById('passwordInput').value).toString())) {
-          setCookie('boomToken',apiKey,30);
-
-          loadContent();
-        }
-        else {
-          alert('Incorrect password. Please try again.');
-        }
-      }
-
-      async function loadContent() {
-        document.getElementById('passwordPrompt').style.display = 'none';
-        document.querySelector('.content').style.display = 'flex';
-        document.querySelector('.content').style.flexDirection = 'column';
-        const fileContents = document.querySelectorAll('.file-content')
-        fileContents.forEach(fileContent => {
-          fileContent.style.display = 'flex';
-          fileContent.style.flexDirection = 'column';
-        });
-        fetchCommandOutput();
-        fetchLogFileContent();
-        fetchBoommeterFileContent();
-
-        // Refresh content regularly
-        setInterval(fetchCommandOutput, 15000);
-        setInterval(fetchLogFileContent, 15000);
-        setInterval(fetchBoommeterFileContent, 1000);
-      }
-
-      function replaceBoomNumbers(input) {
-        const regex = /\d+(\.\d+)?💥/g;
-        return input.replace(regex, (match) => {
-          const numberPart = match.slice(0, -2);
-          return `<span style='color:#f07178; font-weight: bold;'>${numberPart}  </span>`;
-        });
-      }
-
-      async function fetchCommandOutput() {
-        if (runningCmd)
-          return;
-        runningCmd = true;
-
-        const default_endpoints = [
-          '/run_boom_latest_command',
-          '/run_boom_favorite_command',
-          '/run_boom_drought_longest_command',
-          '/run_boom_board_command',
-          '/run_boom_patchnotes_current_command',
-          '/run_boom_hall_command'
-        ];
-        const default_boards = "avg freq top drought"
-
-        // Clear previous output
-        const outputElement = document.getElementById('output');
-        outputTxt = ''
-
-        var endpoints = default_endpoints; // TODO: dynamically configure them here?
-        var boards = default_boards
-        try {
-          for (const endpoint of endpoints) {
-            const response = await fetch(endpoint, {
-              method: 'POST',
-              headers: {
-                'Content-Type': 'application/json'
-              },
-              body: JSON.stringify({
-                key: apiKey,
-                boardcmd: boards
-              })
-            });
-
-            const data = await response.json();
-
-            if (data.output) {
-              outputTxt += replaceBoomNumbers(data.output)
-            }
-            if (data.error && data.error.length > 0) {
-              const errorElement = document.createElement('div');
-              errorElement.textContent = 'Error: ' + data.error;
-              outputElement.appendChild(errorElement);
-
-              eraseCookie('boomToken');
-            }
-          }
-        } catch(error) {
-          console.error('Error:', error);
-        } finally {
-          outputElement.innerHTML = '';
-          outputElement.innerHTML = outputTxt;
-          runningCmd = false;
-        }
-      }
-
-      async function fetchLogFileContent() {
-        if (fetchingBoomlog)
-          return;
-        fetchingBoomlog = true;
-        fetch('/read_log_file', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            key: apiKey
-          })
-        }).then(response => response.json()).then(data => {
-          // Clear previous content
-          const fileContentElement = document.getElementById('log-file-content');
-          fileContentElement.innerHTML = '';
-
-          if (data.lines) {
-            data.lines.forEach(line => {
-              const lineElement = document.createElement('div');
-              lineElement.textContent = line;
-              fileContentElement.appendChild(lineElement);
-            });
-          }
-          if (data.error) {
-            const errorElement = document.createElement('div');
-            errorElement.textContent = 'Error: ' + data.error;
-            fileContentElement.appendChild(errorElement);
-
-            eraseCookie('boomToken');
-          }
-        }).catch(error => console.error('Error:', error));
-        fetchingBoomlog = false;
-      }
-
-      async function fetchBoommeterFileContent() {
-        if (fetchingBoommeter)
-          return;
-        fetchingBoommeter = true;
-        fetch('/read_boommeter_file', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json'
-          },
-          body: JSON.stringify({
-            key: apiKey
-          })
-        }).then(response => response.json()).then(data => {
-          // Clear previous content
-          const fileContentElement = document.getElementById('boommeter-file-content');
-          fileContentElement.innerHTML = '';
-
-          if (data.lines) {
-            data.lines.forEach(line => {
-              const lineElement = document.createElement('div');
-              let message = '';
-              let username = '';
-              let usernameElement = null;
-
-              if (line.includes(':')) {
-                [username,message] = line.split(/:(.+)/);
-                usernameElement = document.createElement('span');
-                usernameElement.style.fontWeight = 'bold';
-                if (username.toLowerCase().includes('boombot')) {
-                  usernameElement.style.color = '#82aaff';
-                } else {
-                  usernameElement.style.color = '#c792ea';
-                }
-                usernameElement.textContent = username + ': ';
-              } else {
-                message = line.trim();
-              }
-
-              const messageElement = document.createElement('span');
-              const words = message.split(' ');
-
-              words.forEach( (word, index) => {
-                const wordElement = document.createElement('span');
-                if (index === 1 && word.startsWith('/')) {
-                  wordElement.style.fontStyle = 'italic';
-                }
-                if (/^@[a-zA-z]+$/.test(word)) {
-                  if (word.toLowerCase().includes('bot')) {
-                    wordElement.style.color = '#82aaff';
-                  } else {
-                    wordElement.style.color = '#c792ea';
-                  }
-                }
-                wordElement.textContent = word + ' ';
-                messageElement.appendChild(wordElement);
-              });
-              if (usernameElement != null) {
-                lineElement.appendChild(usernameElement);
-              }
-              lineElement.appendChild(messageElement);
-              fileContentElement.appendChild(lineElement);
-            });
-          }
-          if (data.error) {
-            const errorElement = document.createElement('div');
-            errorElement.textContent = 'Error: ' + data.error;
-            fileContentElement.appendChild(errorElement);
-
-            eraseCookie('boomToken');
-          }
-        }).catch(error => console.error('Error:', error));
-        fetchingBoommeter = false;
-      }
-
-      window.onload = function() {
-        if (checkCookie('boomToken')) {
-          apiKey = getCookie('boomToken');
-
-          loadContent();
-        } else {
-          document.getElementById('passwordInput').focus();
-          document.getElementById('passwordInput').addEventListener('keydown', function(event) {
-            if (event.key === 'Enter') {
-              checkPassword();
-            }
-          });
-        }
-      }
-    </script>
-  </head>
-  <body>
-    <div class="password-prompt" id="passwordPrompt">
-      <h1>Enter Password to Access the BOOM Zone</h1>
-      <input type="password" id="passwordInput" placeholder="Enter password">
-      <button onclick="checkPassword()">Submit</button>
-    </div>
-    <div class="content">
-      <h1>Welcome to the BOOM zone!</h1>
-      <pre class="output" id="output">Loading Boom Boards...</pre>
-    </div>
-    <div class="file-content">
-      <h1>💥💥💥💥💥</h1>
-      <pre id="log-file-content">Loading Random Boom Log...</pre>
-    </div>
-    <div class="file-content">
-      <h1>💥💥💥💥💥</h1>
-      <pre id="boommeter-file-content">Loading Boommeter Log...</pre>
-    </div>
-  </body>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <title>BOOM zone</title>
+        <link rel="stylesheet" href="static/styles/styles.css"/>
+        <script src="static/lib/crypto.js"></script>
+        <script src="static/scripts/helper.js"></script>
+        <script src="static/scripts/cookies.js"></script>
+        <script src="static/scripts/keyboard.js"></script>
+        <script src="static/scripts/seasonal.js"></script>
+        <script src="static/scripts/scripts.js"></script>
+    </head>
+    <body>
+        <div style='text-align: center;'>
+            <h1>💥💥💥💥💥 Welcome to the <span class="hover-red"> BOOM </span> zone! 💥💥💥💥💥</h1>
+        </div>
+        <div class="container" id="passwordContainer">
+            <div class="password-prompt" id="passwordPrompt">
+                <h1>Enter Password to Access the BOOM Zone</h1>
+                <input type="password" id="passwordInput" placeholder="Enter password">
+                <button onclick="checkPassword()">Submit</button>
+            </div>
+        </div>
+        <div class="container" id="loadingContainer">
+            <div class="loading" id="loading">
+                <div class="loading-bar">
+                    <h1>loading...</h1>
+                    <div id="loading-bar"></div>
+                </div>
+            </div>
+        </div>
+        <div class="container" id="alertContainer">
+            <div class="alert" id="alert">
+                <div class="alert-box">
+                    <h1 id="alertHeader"></h1>
+                    <h3 id="alertBody"></h3>
+                </div>
+            </div>
+        </div>
+        <div class="container" id="contentContainer">
+            <div class="content" onClick="contentClick()">
+                <pre class="output" id="output" >Loading Boom Boards...</pre>
+            </div>
+            <div class="file-content">
+                <pre class="log-file-content" id="log-file-content">Loading Random Boom Log...</pre>
+            </div>
+            <div class="file-content">
+                <pre class="boommeter-file-content" id="boommeter-file-content">Loading Boom Chat...</pre>
+            </div>
+        </div>
+    </body>
 </html>
+<!-- DONE: loading screen -->
+<!-- DONE: scroll lock -->
+<!-- DONE: scroll styling -->
+<!-- DONE: sticky scroll for tables -->
+<!-- DONE: favorite user highlight -->
+<!-- DONE: seasonal leaf/snow effect -->
+<!-- DONE: error handling -->
+<!-- TODO: save local user preferences -->
+<!-- TODO: context click menu -->
+<!-- TODO: auto cycle boom board -->
+<!-- TODO: smarter ascii art handling -->
+<!-- TODO: announcements -->
+<!-- TODO: username login -->
+<!-- TODO: send chat messages from site -->
+<!-- TODO: custom colors per user -->
+<!-- TODO: logout button -->

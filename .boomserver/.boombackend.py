@@ -1,8 +1,12 @@
-from flask import Flask, jsonify, render_template, send_from_directory, request
-
 import os
 import subprocess
 import re
+
+import api.boomjson as bj # cfg helper functions
+import api.boomapi  as ba # API helper functions
+
+from flask import Flask, jsonify, render_template, send_from_directory, request
+
 
 app = Flask(__name__)
 
@@ -13,8 +17,8 @@ ANSI_COLORS = {
     '100': 'table-row-even',
 }
 
-PASSWD="a27c37953ea57cf95ec55e628cf518b168e7b62bc50ff0a1c8b7ab39da0f93ad"
-KEY="blahblah32348h2nfiwekhfgjng9qeqirubgkvq" #TODO: make this random and keep list of active
+DEFPASSWD = "a27c37953ea57cf95ec55e628cf518b168e7b62bc50ff0a1c8b7ab39da0f93ad"
+
 BOOMUSERDIR=<unset>
 BOOMBOSS=<unset>
 BOOMRCS=<unset>
@@ -37,12 +41,6 @@ def ansi_to_html(text):
     text = ANSI_ESCAPE.sub(replace_ansi, text)
     return text.replace('\n', '<br>')
 
-def validate_key(key):
-    if key == KEY:
-        return True
-    else:
-        return False
-
 @app.route('/')
 def index():
     return render_template('.boom.html')
@@ -53,74 +51,62 @@ def favicon():
                                'favicon.ico',
                                mimetype='image/vnd.microsoft.icon')
 
+def run_simple_command(cmd):
+    try:
+        api_key = request.get_json().get('key')
+        valid_key, username = ba.validate_key(api_key)
+        if not valid_key: return jsonify(error="Invalid API Key"), 401
+
+        user_cfg = bj.load_json(f"data/env/{username}.json")
+        os.environ['BOOMTABLECOLS'] = user_cfg.get('columns', '')
+
+        cmd = f'{CMDPREFIX}{cmd}"'
+        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
+        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
+    except Exception as e:
+        return jsonify(error=str(e)), 500
+
 @app.route('/run_command', methods=['POST'])
 def run_command():
-    try:
-        api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
+    return run_simple_command('boom latest && echo && boom favorite && echo && boom drought longest && echo && boom board && echo -n Patch && boom patchnotes current && echo && boom hall')
 
-        cmd = f'{CMDPREFIX}boom latest && echo && boom favorite && echo && boom drought longest && echo && boom board && echo -n Patch && boom patchnotes current && echo && boom hall"'
-        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
-    except Exception as e:
-        return jsonify(error=str(e)), 500
+#############################
+# Individual command routes #
+#############################
 
-####
-# Individual command routes
 @app.route('/run_boom_latest_command', methods=['POST'])
 def run_boom_latest_command():
-    try:
-        api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
-
-        cmd = f'{CMDPREFIX}boom latest && echo"'
-        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
-    except Exception as e:
-        return jsonify(error=str(e)), 500
+    return run_simple_command('boom latest && echo')
 
 @app.route('/run_boom_favorite_command', methods=['POST'])
 def run_boom_favorite_command():
-    try:
-        api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
-
-        cmd = f'{CMDPREFIX}boom favorite && echo"'
-        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
-    except Exception as e:
-        return jsonify(error=str(e)), 500
+    return run_simple_command('boom favorite && echo')
 
 @app.route('/run_boom_drought_longest_command', methods=['POST'])
 def run_boom_drought_longest_command():
-    try:
-        api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
-
-        cmd = f'{CMDPREFIX}boom drought longest && echo"'
-        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
-    except Exception as e:
-        return jsonify(error=str(e)), 500
+    return run_simple_command('boom drought longest && echo')
 
 @app.route('/run_boom_board_command', methods=['POST'])
 def run_boom_board_command():
-    try:
-        api_key = request.get_json().get('key')
-        boardarg = request.get_json().get('boardcmd') # One of avg/drought/freq/full/today/top/null
-        if boardarg is None: boards = [""]
-        elif ' ' in boardarg: boards = boardarg.split()
-        else: boards = [boardarg]
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
+    api_key = request.get_json().get('key')
+    valid_key, username = ba.validate_key(api_key)
+    if not valid_key: return jsonify(error="Invalid API Key"), 401
 
+    boardarg = request.get_json().get('boardcmd') # One of avg/drought/freq/full/today/top/null
+    if boardarg is None: boards = [""]
+    elif ' ' in boardarg: boards = boardarg.split()
+    else: boards = [boardarg]
+
+    try:
         # Empty boardarg == avg/freq/top/drought boards
         stdout = ""
         stderr = []
         for arg in boards:
-            cmd = f'{CMDPREFIX}boom board {arg}"'
-            result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-            stdout += ansi_to_html(result.stdout)
-            stderr += result.stderr.splitlines()
+            arg = arg.replace("-", " ")
+            result = run_simple_command(f'boom board {arg}')
+
+            stdout += result.get_json()['output']
+            stderr += result.get_json()['error']
 
         return jsonify(output=stdout, error=stderr)
     except Exception as e:
@@ -128,34 +114,20 @@ def run_boom_board_command():
 
 @app.route('/run_boom_patchnotes_current_command', methods=['POST'])
 def run_boom_patchnotes_current_command():
-    try:
-        api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
-
-        cmd = f'{CMDPREFIX}echo -n Patch && boom patchnotes current && echo"'
-        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
-    except Exception as e:
-        return jsonify(error=str(e)), 500
+    return run_simple_command('echo -n Patch && boom patchnotes current && echo')
 
 @app.route('/run_boom_hall_command', methods=['POST'])
 def run_boom_hall_command():
-    try:
-        api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
+    return run_simple_command('boom hall && echo')
 
-        cmd = f'{CMDPREFIX}boom hall && echo"'
-        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
-    except Exception as e:
-        return jsonify(error=str(e)), 500
-####
+#############################
 
 @app.route('/read_log_file', methods=['POST'])
 def read_log_file():
     try:
         api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
+        valid_key, username = ba.validate_key(api_key)
+        if not valid_key: return jsonify(error="Invalid API Key"), 401
 
         logfile = f"/{BOOMUSERDIR}/{BOOMBOSS}/{BOOMINSTALL}/.boomlog"
         with open(logfile, 'r') as file:
@@ -169,7 +141,8 @@ def read_log_file():
 def read_boommeter_file():
     try:
         api_key = request.get_json().get('key')
-        if not validate_key(api_key): return jsonify(error="Invalid API Key"), 401
+        valid_key, username = ba.validate_key(api_key)
+        if not valid_key: return jsonify(error="Invalid API Key"), 401
 
         logfile = f"/{BOOMUSERDIR}/{BOOMBOSS}/{BOOMINSTALL}/.boommeterlog"
         with open(logfile, 'r') as file:
@@ -186,14 +159,60 @@ def read_boommeter_file():
     except Exception as e:
         return jsonify(error=str(e)), 500
 
+@app.route('/boomuser', methods=['POST'])
+def boomuser():
+    data = request.get_json()
+    username = data["username"]
+    password = DEFPASSWD
+
+    users = bj.load_users()
+
+    if username in users:
+        # No need to create user if exists
+        return jsonify({})
+
+    valid_user = False
+    with open(f"/{BOOMUSERDIR}/{BOOMBOSS}/{BOOMINSTALL}/.boomusers", "r") as f:
+        for line in f:
+            if line.strip() == username:
+                valid_user = True
+
+    if not valid_user:
+        return jsonify(success=False, error="Invalid user")
+
+    users[username] = {
+        "password_hash": ba.hash_password(password),
+        "api_key": None,
+        "api_key_expires": 0
+    }
+
+    bj.save_users(users)
+
+    return jsonify(success=True)
+
 @app.route('/boompass', methods=['POST'])
 def boompass():
-    passwd = request.get_json().get('password')
+    data = request.get_json()
+    passwd = data['password']
+    usern  = data['username'] if 'username' in data else None
 
-    if passwd == PASSWD:
-        return jsonify(valid=True, key=KEY)
+    users = bj.load_users()
+
+    if usern not in users and passwd == DEFPASSWD:
+        return jsonify(valid=True, key=ba.DEFKEY)
+    elif usern in users:
+        user = users[usern]
+        if not ba.verify_password(passwd, user["password_hash"]):
+            return jsonify(valid=False), 401
+
+        key, expr = ba.generate_api_key()
+        user["api_key"] = key
+        user["api_key_expr"] = expr
+        bj.save_users(users)
+
+        return jsonify(valid=True, key=key, expires=expr, user=usern)
     else:
-        return jsonify(valid=False)
+        return jsonify(valid=False), 401
 
 if __name__ == '__main__':
     app.run(host='0.0.0.0', port=BOOMPORT, debug=True)

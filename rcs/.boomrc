@@ -191,11 +191,16 @@
 # 2.6.4  - boom roasts and hypes customizable in BOOMCFGFILE
 # 2.6.5  - `boom conf` command documented
 # 2.6.6  - boom emoji being different in two simultaneous boom sessions will no longer lose booms on export
-# 2.7.0  - boom boards have customizable columns now
+# 2.7.0  - boom boards have customizable columns now with completion
 # 2.7.1  - `chat /roast random` and `chat /hype random` commands implemented
+# 2.7.2  - BOOMNOWEEKENDFAV config env var added
+# 2.7.3  - set up site user account on sourcing .boomrc
+# 2.7.4  - chat clear only works with no further args and asks for confirmation
+# 2.7.5  - BOOMBOTCHATFREQ config env var added
+# 2.7.6  - `doommeter` added
 
 DOOMBOOM=
-# Multiple ways to have this set:
+# Multiple ways to have BOOMCFGFILE set:
 #   - Have users source file that sets it and then sources this (recommended)
 #   - Have users set it to point to boss'  config before sourcing
 #   - Have users set it to point to user's config before sourcing (careful)
@@ -413,6 +418,17 @@ fi
 \chmod 644 $_boomStreak $_boomTracker $_boomDrought $_boomBotModeBooms $_boomEmojis $_doomTracker &>/dev/null
 \chmod 777 ~/$BOOMINSTALL $_boomNotify &>/dev/null
 
+# Set up user account on site if not created
+if [[ -z "$DOOMBOOM" && -z "$BOOMSITERUNNER" && -n "$BOOMSITE" ]]; then
+  curl -X POST -H "Content-Type: application/json" -d "{\"username\": \"$USER\"}" $BOOMSITE/boomuser &>/dev/null
+fi
+
+# Set up site config env from current env
+if [[ -z "$DOOMBOOM" && -z "$BOOMSITERUNNER" && -w "/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/" ]]; then
+  echo "{ \"columns\": \"${BOOMTABLECOLS:-$(cat $_boomUsers | xargs)}\" }" \
+    > /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+fi
+
 _boommeter() {
   BOOM_CMDNO=$(printf '%s' "${BOOM_MAGICPROMPT@P}")
   if [[ "$_SILENTBOOM" == "yes" ]]; then _boommeterrunner &>/dev/null; return
@@ -494,7 +510,9 @@ _boommeterrunner() {
         sed -i -e "s/^ $USER $currentrec$/ $USER $deaddrought/" $_boomDroughtRecord
       fi
 
-      if [ -w $_boomFavor ]; then
+      local nofavor=
+      [[ -n "$BOOMNOWEEKENDFAV" && " 0 6 " =~ " $(date +%w) " ]] && nofavor=y
+      if [[ -w $_boomFavor && -z "$nofavor" ]]; then
         # Reroll favorite each day
         if [ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomFavor) +%d)" != "$(TZ=$BOOMTZ date +%d)" ]; then
           local countuser
@@ -529,7 +547,7 @@ _boommeterrunner() {
         echo $remark
       fi
     fi
-    if [[ $(( $RANDOM % 150 )) -eq 25 ]]; then
+    if [[ ${BOOMBOTCHATFREQ:-225} =~ [1-9]+ && $(( $RANDOM % ${BOOMBOTCHATFREQ:-225} )) -eq 25 ]]; then
       echo boombot: $(_bbmRemark $cmd | sed -e "s/your/$USER's/g" -e "s/you/$USER/g") >> $_boommeterLog
     fi
   fi
@@ -584,6 +602,7 @@ boommeter() {
     echo "Congratulations! Your drought was $(cat $_boomDrought) commands long!"
   fi
 
+  # Mult if boombot mode used
   if $logrun && [[ "$(cat $_boomBotModeBooms)" == "-2" ]]; then
     mult=$((${mult:-1}*2))
     echo "Congratulations! BoomBot has rewarded you with a SUPER boom!"
@@ -636,6 +655,31 @@ boommeter() {
   fi
   if $logrun && [[ -f "$_boomStreak" ]]; then _boomhog $term; fi
   if $logrun && [[ "$BOOMBOTMODE" == "yes" ]]; then _bbmHandler $score; fi
+}
+###Function doommeter
+# "\t${B}doommeter${N} THING";
+# "\t\tthis function ranks THING on the doommeter...";
+###
+doommeter() {
+  if [[ "$DOOMBOOM" == "yes" ]]; then echo bash: doommeter: command not found; return; fi
+  if [ -z "$1" ]; then
+    echo "Give us something to rank on the doom meter..."
+    return 1
+  fi
+
+  local score=$(( $RANDOM % 8 - 2))
+  local result=""
+
+  if [ $score -lt 1 ] ; then
+    score=1
+  fi
+
+  for i in $(seq 1 $score); do
+    result+="$_BE_HOLE"
+  done
+
+  echo "Let's rank it on the doom meter... $@ gets $score big doom$([ $score -gt 1 ] && echo s). $result"
+  echo "$USER's ranking it on the doom meter... $@ gets $score big doom$([ $score -gt 1 ] && echo s). $result" >> $_boommeterLog
 }
 
 ###Function boomavg
@@ -866,7 +910,7 @@ alias boomhelp="_boomIntroTxt flag"
 # "\n\t\t${B}avg${N}\n\t\t\tsee and compare user avgs of all commands randomly boomed by more than one person";
 # "\t\t${B}drought${N}\n\t\t\tsee and compare longest & current droughts";
 # "\t\t${B}freq${N}\n\t\t\tsee and compare boom frequency for all commands randomly boomed by more than one person";
-# "\t\t${B}full${N}\n\t\t\tsee full chart of boom avgs/freqs/droughts including cmds only boomed by one user";
+# "\t\t${B}full${N}\n\t\t\tsee full chart of boom avgs and freqs including cmds only boomed by one user";
 # "\t\t${B}today${N}\n\t\t\tsee amount of booms each user has received today - same as \`chat /boomstoday\` but the output is sorted";
 # "\t\t${B}top${N}\n\t\t\tsee all-time top NUM (default 5) boomed commands for all users";
 # "\t\t${B}help${N}\n\t\t\tshow boom board help";
@@ -1091,23 +1135,19 @@ boom() {
           echo Frequency Leaderboard
           echo
           /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomfreqs | sed -re s/,?erase//g)" 3.0 "rare"
-          echo Drought Leaderboard
-          echo
-          /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifyboomdroughts | sed -re s/,?erase//g)" 3.0 "rare"
         ;;
         board_today_)
           if [[ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomFavor) +%d)" != "$(TZ=$BOOMTZ date +%d)" ]]; then
-            echo Nobody has boomed today...
+            echo nobody has boomed today...
           fi
           echo Total booms $(stat -c %y $_boomFavor | sed -e 's/[0-9].\(..\)-\([0-9].-[0-9].\) .*/\2-\1/'): && sed -ne "2p" $_boomFavor | sed -ne "s/ /\n/gp" | grep [a-z] | sort | uniq -c | sort -nr
         ;;
         board_top_)
-          echo Top Boomed Commands Leaderboard
-          echo
           local num=5
           for arg in $@; do
             [[ "$arg" =~ [0-9]+ ]] && num=$arg
           done
+          echo
           /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomtables.py "$(_jsonifytopbooms $num | sed -re s/,?erase//g)" 0.0 twoper
         ;;
         board_-_) ;&
@@ -1161,6 +1201,14 @@ boom() {
 
       case "chat_$2_" in
         chat_clear_)
+          # Chat normally if words after clear
+          if [ $# -gt 2 ]; then chat "====" ${@:2}; return; fi
+
+          # Check if user means it
+          local respY
+          read -p "Really clear chat [y/N]? " respY
+          if [[ ! " y Y yes " =~ " $respY " ]]; then return; fi
+
           cat $_boommeterLog > $_boommeterLog-$(TZ=$BOOMTZ date -u +%s)
           echo "$USER reset the boom chat" > $_boommeterLog
           #echo "$USER is testing resetting the boom chat" >> $_boommeterLog
@@ -1210,7 +1258,7 @@ boom() {
             if [[ " $word " == " $3 " ]]; then
               found=yes
               if [ $(sed -ne '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|p' $_boommeterLog | wc -l) -gt 1 ]; then echo Error: More than one line matches the previous chat - cannot edit; return; fi
-              read -p "$(sed -ne '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\[EDITED\] ||;\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\('"${prevwords[*]}"'\) '"$3"'|\1 '"$4"'|p' $_boommeterLog) -- look right y/[n]? " respY
+              read -p "$(sed -ne '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\[EDITED\] ||;\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\('"${prevwords[*]}"'\) '"$3"'|\1 '"$4"'|p' $_boommeterLog) -- look right [y/N]? " respY
               if [[ " y Y yes " =~ " $respY " ]]; then
                 sed -i '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\[EDITED\] ||;\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\('"$USER"': '"${prevwords[*]:+${prevwords[*]} }"'\)'"$3"'|[EDITED] \1'"$4"'|' $_boommeterLog
                 break
@@ -1349,6 +1397,7 @@ boom() {
         chat__)
           echo What\'s boomin?
         ;;
+        chat_====_) shift ;&
         *)
           # Emoji replace if user forgot to tab complete or in chat env
           local chatstr
@@ -1396,6 +1445,12 @@ boom() {
       _boss && echo "BOOMHYPES=(\"hype1\""
       _boss && echo "           \"hype2\""
       _boss && echo "           \"...\")"
+      _boss && echo
+      _boss && echo \# Set this for favorite to not reroll on weekends
+      _boss && echo BOOMNOWEEKENDFAV=$BOOMNOWEEKENDFAV
+      _boss && echo
+      _boss && echo \# Set this to tune boombot\'s random chat freq - must =~ \[1-9\]+ for bot to chat
+      _boss && echo BOOMBOTCHATFREQ=${BOOMBOTCHATFREQ:-225}
       _boss && echo
       echo Optional user-defined variables to set before source:
       _boss && echo \# To globally change default user-defined vars, set them in the BOOMCFGFILE!
@@ -1501,7 +1556,7 @@ boom() {
 
         day=tomorrow
       else
-        echo "$_BE_BOOM🏆 Nobody has boomed yet today 🏆$_BE_BOOM"
+        echo "$_BE_BOOM🏆 nobody has boomed yet today 🏆$_BE_BOOM"
         day=today
       fi
 
@@ -1742,23 +1797,14 @@ _boombot() {
   PS1='\[\033[00m\]$(declare -f _boombotprompt &>/dev/null && _boombotprompt || echo -e  "'"$_BE_BOT"' \033[1;32mboombot\033[00m@\033[1;34m\h\033[00m \w ")$([ -n "$BOOMBOTPROMPTCMD" ] && type $BOOMBOTPROMPTCMD &>/dev/null && $(echo $BOOMBOTPROMPTCMD))\[\033[00m\] > '
 }
 _boombotName() {
-  local botname=$(($RANDOM%35))
+  local botname=$(($RANDOM%9))
+  local redaltnames=($(echo "boomking boomlover $USER? boomqueen"))
+  local yellowaltnames=($(echo "aj bigjustice rizzler cousinangelo corecarl"))
+
   if [ $botname -eq 3 ]; then
-    echo -e "$_BE_BOT \033[1;31mboomking"
+    echo -e "$_BE_BOT \033[1;31m${redaltnames[$RANDOM % ${#redaltnames[@]}]}"
   elif [ $botname -eq 8 ]; then
-    echo -e "$_BE_BOT \033[1;31mboomlover"
-  elif [ $botname -eq 12 ]; then
-    echo -e "$_BE_BOT \033[1;31m$USER?"
-  elif [ $botname -eq 4 ]; then
-    echo -e "$_BE_BOT \033[1;31mboomqueen"
-  elif [ $botname -eq 5 ]; then
-    echo -e "$_BE_BOT \033[1;33maj"
-  elif [ $botname -eq 7 ]; then
-    echo -e "$_BE_BOT \033[1;33mbigjustice"
-  elif [ $botname -eq 11 ]; then
-    echo -e "$_BE_BOT \033[1;33mrizzler"
-  elif [ $botname -eq 10 ]; then
-    echo -e "$_BE_BOT \033[1;33mcousinangelo"
+    echo -e "$_BE_BOT \033[1;33m${yellowaltnames[$RANDOM % ${#yellowaltnames[@]}]}"
   else
     echo -e "$_BE_BOT \033[1;32mboombot"
   fi
@@ -2146,10 +2192,10 @@ _chat_cmds() {
       if [ -z "$target" ]; then target=$USER; fi
       if [[ "$(TZ=$BOOMTZ date -d @$(stat -c %Y $_boomFavor) +%d)" == "$(TZ=$BOOMTZ date +%d)" ]]; then
         echo boombot: $_BE_BOT BoomBot $(echo thinks knows expects decided votes hopes | xargs shuf -n1 -e) $target will get \
-          $(echo more max revoked invalid 100 75 50 infinite negative super BoomBot | xargs shuf -n1 -e) booms today >> $_boommeterLog
+          $(echo more max revoked invalid 10 25 50 infinite negative super BoomBot | xargs shuf -n1 -e) booms today >> $_boommeterLog
       else
         echo boombot: $_BE_BOT These stats are $(echo old cooked trash deprecated thrashed clapped ancient archaic cringy | xargs shuf -n1 -e)! \
-          $(echo Somebody $target Tim BoomBot Kubasik | xargs shuf -n1 -e) needs to boom today! >> $_boommeterLog
+          $(echo Somebody $target BoomBot | xargs shuf -n1 -e) needs to boom today! >> $_boommeterLog
       fi
     ;;
     /corecarl_all_) # not in help
@@ -2259,6 +2305,8 @@ _chat_cmds() {
             else
               echo boombot: $_BE_BOT BoomBot can\'t even enact revenge... >> $_boommeterLog
             fi
+          elif [[ "$random" == "$USER" ]]; then
+            echo boombot: $_BE_BOT HA! $USER randomly roasts themselves! >> $_boommeterLog
           fi
         ;;
         /roast__)
@@ -2513,7 +2561,7 @@ _boom() {
 
   local options suboptions
   options=($(declare -f boom | sed -ne '/^\s.*)$/ s/\s*\(.*\)_)/\1/p' | grep -v [*_]))
-  suboptions=($(declare -f boom | sed -ne "\|^\s.*$3_.*_)$| s|\s*$3"'_\(.*\)_)|\1|p' | grep -v \* | grep -v '\(all\|me\)'))
+  suboptions=($(declare -f boom | sed -ne "\|^\s.*$3_.*_)$| s|\s*$3"'_\(.*\)_)|\1|p' | grep -v [*=] | grep -v '\(all\|me\)'))
 
   if [[ "$3" == "avg" && "${#COMP_WORDS[@]}" == "2" ]]; then
     COMPREPLY=($(cat $_boomRankings | awk '{print $1}'))
@@ -2531,6 +2579,9 @@ _boom() {
 
   if [[ "$3" == "board" && "${#COMP_WORDS[@]}" == "3" && -z "$COMPREPLY" ]]; then
     COMPREPLY=($(compgen -c -- ${2})) # Complete with all possible commands
+  fi
+  if [[ "board" == "${COMP_WORDS[1]}" && ${#COMP_WORDS[@]} -ge 4 ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomUsers | xargs)" -- $2))
   fi
 }
 complete -F _boom boom
@@ -2610,7 +2661,7 @@ _chat() {
   fi
 
   local options
-  options=($(declare -f boom | sed -ne '/^\s.*chat_.*_)$/ s/\s*chat_\(.*\)_)/\1/p' | grep -v \*))
+  options=($(declare -f boom | sed -ne '/^\s.*chat_.*_)$/ s/\s*chat_\(.*\)_)/\1/p' | grep -v [*=]))
   if [ "${#COMP_WORDS[@]}" == "2" ]; then
     COMPREPLY=($(compgen -W "${options[*]}" -- $2));
   fi
@@ -2689,8 +2740,6 @@ fi
 
 # Next up
 #TODO: update site with customizable order/boards - in work
-#TODO: Add optional separate site port to boomcfg - optional config in general
-#TODO: default roasts and hypes and remarks but also can add with separate configs
 
 # Short term todos - roughly in order
 #TODO: bar BTODAY resets if new day?
@@ -2701,6 +2750,8 @@ fi
 #TODO: /text numbers?
 #TODO: @everyone -<specific user>
 #TODO: bug where exit doesn't exit on dead boomsession (one of 2 in same place closing)
+#TODO: Handle mentions if edited with chat edit?
+#TODO: Enforce configured emojis to be emojis?
 
 # Long term todos
 #TODO: more boombot remarks
@@ -2715,10 +2766,10 @@ fi
 #CANCELLEDTODO: more boom mult situations?: need to not overdo mult... goal is avgs under 5 mostly, don't want to cheapen super booms
 #CANCELLEDTODO: timestamps saved with chats?: not planned for multiple reasons
 #CANCELLEDTODO: boombot takes boom tax of 2 on every random boom when timed out?: users shouldn't have to lose score
-#CANCELLEDTODO: boom config command to view and toggle env vars like silent: just not necessary yet
 #CANCELLEDTODO: use lame to play BOOM or we bring the boom on rand hits if user configures for that?: too much for boomusers like us
 #CANCELLEDTODO: /timeout with duration: will probably just adjust default duration in future similar to fav entries
 #CANCELLEDTODO: /work for multiple people - nice instead of running 2 /work commands: this is too much /work
+#CANCELLEDTODO: fix problem emojis (emojis that should take up 2 spacs but take up 1): this is a terminal specific problem that can be fixed with customization
 
 #KNOWNBUG: chat /text is upside down in zone chat display - escape it and make it ascii?
 #KNOWN"BUG": because we are keeping this "feature", new terminals can boom on startup and the first empty line after opening terminals can boom
