@@ -5,45 +5,59 @@ BOOMENV=""
 
 ###ExcAlias avg
 # "\t${B}avg${N}\n\t\tboom env alias for boomavg";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boomavg")";
 ###
 ###ExcAlias board
 # "\t${B}board${N}\n\t\tboom env alias for boom board";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-board")";
 ###
 ###ExcAlias drought
 # "\t${B}drought${N}\n\t\tboom env alias for boom drought";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-drought")";
 ###
 ###ExcAlias favorite
 # "\t${B}favorite${N}\n\t\tboom env alias for boom favorite";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-favorite")";
 ###
 ###ExcAlias hall
 # "\t${B}hall${N}\n\t\tboom env alias for boom hall";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-hall")";
 ###
 ###ExcAlias latest
 # "\t${B}latest${N}\n\t\tboom env alias for boom latest";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-latest")";
 ###
 ###ExcAlias meter
 # "\t${B}meter${N}\n\t\tboom env alias for boommeter";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boommeter")";
 ###
 ###ExcAlias patchnotes
 # "\t${B}patchnotes${N}\n\t\tboom env alias for boom patchnotes";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-patchnotes")";
 ###
 ###ExcAlias todo
 # "\t${B}todo${N}\n\t\tboom env alias for boom todo";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-todo")";
 ###
 ###ExcAlias total
 # "\t${B}total${N}\n\t\tboom env alias for boom total";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-total")";
 ###
 ###ExcAlias zone
 # "\t${B}zone${N}\n\t\tboom env alias for boom zone";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-zone")";
 ###
 ###ExcAlias bot
 # "\t${B}bot${N}\n\t\tboom env alias for boombot";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boombot")";
 ###
 ###ExcAlias bar
 # "\t${B}bar${N}\n\t\tboom env alias for boombar";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boombar")";
 ###
 ###ExcAlias docs
 # "\t${B}docs${N}\n\t\tboom env alias for boomdocs";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boomdocs")";
 ###
 command -v avg &>/dev/null        || { alias avg='boomavg'                && BOOMENV+="avg";         }
 command -v board &>/dev/null      || { alias board='boom board'           && BOOMENV+=" board";      }

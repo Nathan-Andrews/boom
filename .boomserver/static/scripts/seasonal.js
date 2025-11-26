@@ -10,7 +10,7 @@ function getHoliday() {
         holiday = "CHRISTMAS"
     }
 
-    const firstDayOfNov = new Date(`11-1-${currentYear}`).getDay();
+    const firstDayOfNov = new Date(`${currentYear}-1-11`).getDay();
     const firstThursOfNov = (11 - firstDayOfNov) % 7 + 1;
 
     if (currentMonth === 10 && currentDay >= (firstThursOfNov + 11) && currentDay <= (firstThursOfNov + 21)) {

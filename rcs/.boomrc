@@ -198,6 +198,10 @@
 # 2.7.4  - chat clear only works with no further args and asks for confirmation
 # 2.7.5  - BOOMBOTCHATFREQ config env var added
 # 2.7.6  - `doommeter` added
+# 2.7.7  - fix ascii display bug in chat env
+# 2.7.8  - `zone chat` and `zone booms` are deprecated in favor of `zone term`
+# 2.7.9  - add complete docs call to boom env alias Exc docs
+# 2.7.10 - mentions handled in `chat edit`
 
 DOOMBOOM=
 # Multiple ways to have BOOMCFGFILE set:
@@ -427,6 +431,7 @@ fi
 if [[ -z "$DOOMBOOM" && -z "$BOOMSITERUNNER" && -w "/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/" ]]; then
   echo "{ \"columns\": \"${BOOMTABLECOLS:-$(cat $_boomUsers | xargs)}\" }" \
     > /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  chmod 644 /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json &>/dev/null
 fi
 
 _boommeter() {
@@ -1015,15 +1020,11 @@ alias boomhelp="_boomIntroTxt flag"
 ###
 ###SubFunction _boom-zone
 ###ExcFunction _boom-zone-summary
-###ExcFunction _boom-zone-booms
-###ExcFunction _boom-zone-chat
 ###ExcFunction _boom-zone-term
-# "\t${B}boom-zone${N} [${B}summary${N} | ${B}booms${N} | ${B}chat${N} | ${B}term${N}]";
+# "\t${B}boom-zone${N} [${B}summary${N} | ${B}term${N}]";
 # "\t\tlaunch the boom zone site ($BOOMSITE) from cmd line by default";
 # "\t\talternatively, use the optional args to see site displays in the cmd line:";
 # "\n\t\t${B}summary${N}\n\t\t\tdisplay the boom boards/stats as formatted on the default site layout";
-# "\t\t${B}booms${N}\n\t\t\tsee the boom log from the middle of the site - newest on bottom";
-# "\t\t${B}chat${N}\n\t\t\tsee the last 40 lines from the chat log as on the site - newest on top";
 # "\t\t${B}term${N}\n\t\t\tshow an automatically updating site-like view of all three columns!";
 # "\t\t\tthis \"site view\" has a unique summary and can be exited by pressing any key";
 # "\t\t\tcolumns will be cut off in this view if the data is too long for the column";
@@ -1073,6 +1074,7 @@ boom() {
         # This ASCII handling is tied with chat edit for messiest thing in the boomrc
         if [[ -z "$asciiHandled" && "$line" =~ "[ASCII]" ]]; then
           local printedAscii=$(sed -e '\|^🤖$|q' <<< "$flippedAscii")
+          printedAscii="${printedAscii//\\/\\\\\\}"
           while read asciiline; do
             if [[ "$asciiline" == "🤖" ]]; then break; fi
             if [[ -z "$asciiline" ]]; then continue; fi
@@ -1252,6 +1254,13 @@ boom() {
           if [[ "$#" != "4" ]]; then echo Expects \`chat edit FIND REPLACE\` with one word args; return; fi
           local lastline=($(sed -ne '/^\(\[EDITED\] \)\{0,1\}'"$USER"': /s|\(\[EDITED\] \)\{0,1\}\(.*\)|\2|p' $_boommeterLog | tail -n 1))
 
+          # Handle mentions
+          local notifile
+          if [[ "$3" =~ ^"@" ]]; then
+            notifile=/$BOOMUSERDIR/${3#@}/$BOOMINSTALL/.boomnotify
+            [ -n "$(cat $notifile)" ] && echo -n "" > $notifile
+          fi
+
           local prevwords=()
           local word found respY
           for word in ${lastline[@]:1}; do
@@ -1261,6 +1270,12 @@ boom() {
               read -p "$(sed -ne '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\[EDITED\] ||;\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\('"${prevwords[*]}"'\) '"$3"'|\1 '"$4"'|p' $_boommeterLog) -- look right [y/N]? " respY
               if [[ " y Y yes " =~ " $respY " ]]; then
                 sed -i '\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\[EDITED\] ||;\|^\(\[EDITED\] \)\{0,1\}'"$USER"':  \?'"${lastline[*]:1}"'$|s|\('"$USER"': '"${prevwords[*]:+${prevwords[*]} }"'\)'"$3"'|[EDITED] \1'"$4"'|' $_boommeterLog
+
+                # Mention users
+                if [[ "$4" =~ ^"@" ]]; then
+                  _chat_mentions $4
+                fi
+
                 break
               else
                 echo Skipping...;
@@ -1654,14 +1669,10 @@ boom() {
           boom latest && echo && boom favorite && echo && boom drought longest && echo && boom board && echo -n Patch && boom patchnotes current && echo && boom hall
         ;;
         zone_booms_)
-          cat $_boomUserLog | tail -n 54
-        ;;
+        ;&
         zone_chat_)
-          local lastchatupdate
-          local lastchattested="$(tail -n 41 $_boommeterLog | head -n 1)"
-          _update_and_print_chat absolute
-          #cat $_boommeterLog | tail -n 40 | tac | sed 's/\[\(CIPHER\|ASCII\|EDITED\)\] //g' # reversed order but kept ascii upright before _update_and_print_chat
-        ;;
+          echo \`boom zone $2\` is deprecated... use \`boom zone term\` instead
+        ;&
         zone_term_)
           output() {
             local file="$1"
@@ -2496,10 +2507,8 @@ _chat_cmds() {
 
 ###Alias boomzone
 ###ExcAlias _boomzone-summary
-###ExcAlias _boomzone-booms
-###ExcAlias _boomzone-chat
 ###ExcAlias _boomzone-term
-# "\t${B}boomzone${N} [${B}summary${N} | ${B}booms${N} | ${B}chat${N} | ${B}term${N}]";
+# "\t${B}boomzone${N} [${B}summary${N} | ${B}term${N}]";
 # "\t\tquick alias to run \`boom zone\`";
 ###
 alias boomzone='boom zone'
@@ -2561,12 +2570,10 @@ _boom() {
 
   local options suboptions
   options=($(declare -f boom | sed -ne '/^\s.*)$/ s/\s*\(.*\)_)/\1/p' | grep -v [*_]))
-  suboptions=($(declare -f boom | sed -ne "\|^\s.*$3_.*_)$| s|\s*$3"'_\(.*\)_)|\1|p' | grep -v [*=] | grep -v '\(all\|me\)'))
+  suboptions=($(declare -f boom | sed -ne "\|^\s.*$3_.*_)$| s|\s*$3"'_\(.*\)_)|\1|p' | grep -v [*=] | grep -v '\(all\|me\|chat\|booms\)'))
 
-  if [[ "$3" == "avg" && "${#COMP_WORDS[@]}" == "2" ]]; then
-    COMPREPLY=($(cat $_boomRankings | awk '{print $1}'))
-  elif [[ "$3" == "avg" && "${#COMP_WORDS[@]}" == "3" ]]; then
-    COMPREPLY=($(compgen -W "$(cat $_boomRankings | awk '{print $1}')" -- $2));
+  if [[ "$3" == "avg" && "3" == "${#COMP_WORDS[@]}" ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomRankings | grep -v '[{}]' | awk '{print $1}')" -- $2));
   elif [[ "$3" == "total" && "${#COMP_WORDS[@]}" == "3" ]]; then
     COMPREPLY=($(compgen -W "$(cat $_boomUsers) all" -- $2));
   elif [[ "${COMP_WORDS[1]}" == "drought" && "$3" == "rarity" && "${#COMP_WORDS[@]}" == "4" ]]; then
@@ -2587,10 +2594,8 @@ _boom() {
 complete -F _boom boom
 __boomavg() {
   if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
-  if [[ "$3" == "boomavg" && "${#COMP_WORDS[@]}" == "1" ]]; then
-    COMPREPLY=($(cat $_boomRankings | awk '{print $1}'))
-  elif [[ "$3" == "boomavg" && "${#COMP_WORDS[@]}" == "2" ]]; then
-    COMPREPLY=($(compgen -W "$(cat $_boomRankings | awk '{print $1}')" -- $2));
+  if [[ "$3" == "boomavg" && "2" == "${#COMP_WORDS[@]}" ]]; then
+    COMPREPLY=($(compgen -W "$(cat $_boomRankings | grep -v '[{}]' | awk '{print $1}')" -- $2));
   fi
 }
 complete -F __boomavg boomavg
@@ -2708,7 +2713,7 @@ complete -F __boombot boombot
 _boomzone() {
   if [[ "$DOOMBOOM" == "yes" ]]; then return; fi
   if [ "${#COMP_WORDS[@]}" == "2" ]; then
-    COMPREPLY=($(compgen -W "summary booms chat" -- $2))
+    COMPREPLY=($(compgen -W "summary term" -- $2))
   fi
 }
 complete -F _boomzone boomzone
@@ -2749,8 +2754,7 @@ fi
 #TODO: hype occasionally roasts and roast occasionally hypes -- maybe? might just be annoying
 #TODO: /text numbers?
 #TODO: @everyone -<specific user>
-#TODO: bug where exit doesn't exit on dead boomsession (one of 2 in same place closing)
-#TODO: Handle mentions if edited with chat edit?
+#TODO: KNOWNBUG: bug where exit doesn't exit on dead boomsession (one of 2 in same place closing)
 #TODO: Enforce configured emojis to be emojis?
 
 # Long term todos
@@ -2771,6 +2775,5 @@ fi
 #CANCELLEDTODO: /work for multiple people - nice instead of running 2 /work commands: this is too much /work
 #CANCELLEDTODO: fix problem emojis (emojis that should take up 2 spacs but take up 1): this is a terminal specific problem that can be fixed with customization
 
-#KNOWNBUG: chat /text is upside down in zone chat display - escape it and make it ascii?
 #KNOWN"BUG": because we are keeping this "feature", new terminals can boom on startup and the first empty line after opening terminals can boom
 

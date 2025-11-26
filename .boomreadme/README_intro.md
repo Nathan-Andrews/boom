@@ -21,6 +21,8 @@ If you would like to set up the `BOOM Zone` website, just run the `.siteconfig.b
 
 At this point, you are ready to boom! If there are other users in the /BOOMUSERDIR directory that would like to run the boom, just have them add `_boommeter` to their prompt command and source `~BOOMBOSS/.boomrc`! This is most easily done in the user's `.bashrc` file.
 
+NOTE: When running in a multi-user local environment, users either need to be in a shared group that is used for the path to boom files or the path to boom files for every user needs to be accessible/writable by all users.
+
 ## Manual Install
 
 The `.boominstaller.bash` script is tailored to an easy install. There are, however, many ways to install the boom. Follow the steps the boom install script is taking, but feel free to customize it or change paths to install in different locations. As long as the `.boomconfig` file is representative of your changes and the `.boomrc` you source correctly sets the BOOMCFGFILE environment variable, you will be good to go.

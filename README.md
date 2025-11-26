@@ -21,6 +21,8 @@ If you would like to set up the `BOOM Zone` website, just run the `.siteconfig.b
 
 At this point, you are ready to boom! If there are other users in the /BOOMUSERDIR directory that would like to run the boom, just have them add `_boommeter` to their prompt command and source `~BOOMBOSS/.boomrc`! This is most easily done in the user's `.bashrc` file.
 
+NOTE: When running in a multi-user local environment, users either need to be in a shared group that is used for the path to boom files or the path to boom files for every user needs to be accessible/writable by all users.
+
 ## Manual Install
 
 The `.boominstaller.bash` script is tailored to an easy install. There are, however, many ways to install the boom. Follow the steps the boom install script is taking, but feel free to customize it or change paths to install in different locations. As long as the `.boomconfig` file is representative of your changes and the `.boomrc` you source correctly sets the BOOMCFGFILE environment variable, you will be good to go.
@@ -81,7 +83,7 @@ To run the server, you will need `python3.9` or higher, with the `bcrypt` and `f
 
 
 ## Docs
-The below boomdocs output was generated as of patch 2.7.6:
+The below boomdocs output was generated as of patch 2.7.10:
 
 ```text
 Commands in the .boomrc suite:
@@ -102,7 +104,7 @@ Commands in the .boomrc suite:
 	boomhelp
 		print important parts of boom intro text
 		help functionality of boomhelp deprecated by boomdocs
-	boomzone [summary | booms | chat | term]
+	boomzone [summary | term]
 		quick alias to run `boom zone`
 	boomstoday
 		quick alias to run `boom board today`
@@ -232,16 +234,12 @@ Commands in the .boomrc suite:
 			loosely organized by priority - top TODO should be next up
 		total [PERSON | all]
 			view total booms for yourself, boomuser PERSON, or all boomusers
-		zone [summary | booms | chat | term]
+		zone [summary | term]
 			launch the boom zone site (http://<host>:BOOMPORT) from cmd line by default
 			alternatively, use the optional args to see site displays in the cmd line:
 	
 			summary
 				display the boom boards/stats as formatted on the default site layout
-			booms
-				see the boom log from the middle of the site - newest on bottom
-			chat
-				see the last 40 lines from the chat log as on the site - newest on top
 			term
 				show an automatically updating site-like view of all three columns!
 				this "site view" has a unique summary and can be exited by pressing any key
@@ -295,9 +293,13 @@ Commands in the .boomrc suite:
 ```
 
 ## Patch Notes
-The below patchnotes output was generated as of patch 2.7.6:
+The below patchnotes output was generated as of patch 2.7.10:
 
 ```text
+# 2.7.10 - mentions handled in `chat edit`
+# 2.7.9  - add complete docs call to boom env alias Exc docs
+# 2.7.8  - `zone chat` and `zone booms` are deprecated in favor of `zone term`
+# 2.7.7  - fix ascii display bug in chat env
 # 2.7.6  - `doommeter` added
 # 2.7.5  - BOOMBOTCHATFREQ config env var added
 # 2.7.4  - chat clear only works with no further args and asks for confirmation
