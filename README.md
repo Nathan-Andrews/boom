@@ -83,7 +83,7 @@ To run the server, you will need `python3.9` or higher, with the `bcrypt` and `f
 
 
 ## Docs
-The below boomdocs output was generated as of patch 2.7.10:
+The below boomdocs output was generated as of patch 2.8.1:
 
 ```text
 Commands in the .boomrc suite:
@@ -293,9 +293,11 @@ Commands in the .boomrc suite:
 ```
 
 ## Patch Notes
-The below patchnotes output was generated as of patch 2.7.10:
+The below patchnotes output was generated as of patch 2.8.1:
 
 ```text
+# 2.8.1  - boombar handles boomnotify file if on
+# 2.8.0  - major boombar improvements - bar updates in background and works better with less, man, vim, etc
 # 2.7.10 - mentions handled in `chat edit`
 # 2.7.9  - add complete docs call to boom env alias Exc docs
 # 2.7.8  - `zone chat` and `zone booms` are deprecated in favor of `zone term`

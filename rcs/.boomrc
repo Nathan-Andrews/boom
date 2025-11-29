@@ -202,6 +202,8 @@
 # 2.7.8  - `zone chat` and `zone booms` are deprecated in favor of `zone term`
 # 2.7.9  - add complete docs call to boom env alias Exc docs
 # 2.7.10 - mentions handled in `chat edit`
+# 2.8.0  - major boombar improvements - bar updates in background and works better with less, man, vim, etc
+# 2.8.1  - boombar handles boomnotify file if on
 
 DOOMBOOM=
 # Multiple ways to have BOOMCFGFILE set:
@@ -449,7 +451,20 @@ _boommeter() {
     # boomsession imports
     if declare -f _checkForBoomImports &>/dev/null; then _checkForBoomImports; fi
     # boombar update
-    if [[ -n "$BOOMBARSTATE" ]] && declare -f _boombarupdate &>/dev/null; then _boombarupdate; fi
+    if [[ -n "$BOOMBARSTATE" ]] && declare -f boombar &>/dev/null; then
+      # Export tty
+      export BOOMBAR_TTY=$(readlink -f /proc/$$/fd/0)
+
+      # Set bar up for instant redraw
+      local prefcolor
+      prefcolor="[48;2;${BOOMBAR_PREF_RGBBG:-78;78;78}m"
+      printf "\033%s " "$prefcolor $_BE_BOT Loading the bar..." > $BOOMBARCONTENTFILE
+
+      # Print bar if on correct line
+      read -sdR -p $'\E[6n' cursorpos
+      cursorpos=${cursorpos#*\[} # line;col
+      if [[ "${cursorpos%;*}" == "$LINES" ]]; then boombar exit; boombar; fi
+    fi
   fi
   BOOMPREV_HISTCMD=$HISTCMD
   BOOMPREV_CMDNO=$BOOM_CMDNO
@@ -557,7 +572,7 @@ _boommeterrunner() {
     fi
   fi
   if [ -n "$(cat $_boomNotify)" ]; then
-    cat $_boomNotify | tail -n 2
+    [ -z "$BOOMBARSTATE" ] && tail -n 2 $_boomNotify
     echo -n "" > $_boomNotify
   fi
 }
@@ -2759,7 +2774,7 @@ fi
 
 # Long term todos
 #TODO: more boombot remarks
-#TODO: boombar - add boombar options
+#TODO: boombar - add boombar options and play better with man pages
 #TODO: assess additional args with boomssh/exec
 #TODO: use more shell builtins for optimization - $EPOCHSECONDS instead of some dates, $BASH_REMATCH instead of some seds
 #TODO: maybe reward if X+ booms are imported at once to make up for missing super boom milestones (25 multiples)

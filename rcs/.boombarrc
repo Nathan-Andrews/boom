@@ -1,5 +1,9 @@
 #!/usr/bin/env bash
 
+# Thanks to YSAP progress bar videos for inspiration
+
+BOOMBAR_TTY=$(readlink -f /proc/$$/fd/0)
+
 BOOMBAR_DEFAULT_PREFIX="BBMREMARK"
 BOOMBAR_DEFAULT_BBMOFF_ALT="Last Boom: LASTBOOMS LASTCMD"
 BOOMBAR_DEFAULT_SUFFIX="DROUGHTCMDS cmds / DROUGHTMINS mins since last boom"
@@ -9,6 +13,10 @@ BOOMBAR_DEFAULT_SHORTBAR="Need more bar room to boom!"
 BOOMBAR_LASTBOOMS=""
 BOOMBAR_LASTNUM=""
 BOOMBAR_LASTCMD="$([[ -r $_boomStreak && -n $(cat $_boomStreak) ]] && { cat $_boomStreak | awk '{print $1}'; } || echo -n N/A)"
+
+_in_altscreen() {
+  ps -t "${BOOMBAR_TTY#/dev/}" -o state=,comm= | grep -qE '^[RS].*(sl|nano|vim|top|less|man)$'
+}
 
 ###Function boombar
 ###ExcFunction _boombar-conf
@@ -57,6 +65,11 @@ boombar() {
     printf '\0338' # reset the cursor location
     trap - WINCH # untrap terminal resize
     trap - EXIT # untrap exit
+
+    if [[ -n "$BOOMBARCONTENTFILE" ]]; then
+      \rm $BOOMBARCONTENTFILE &>/dev/null
+      unset BOOMBARCONTENTFILE
+    fi
   }
 
   case "$1_" in
@@ -69,12 +82,16 @@ boombar() {
       _boombarenv PRINTENV
     ;;
     exit_)
-      if [[ -n "$BOOMBARSTATE" ]]; then _boombardeinitterm
+      if [[ -n "$BOOMBARSTATE" ]]; then
+        _boombardeinitterm
       else echo Nothing to do
       fi
     ;;
     _)
       if [[ -z "$BOOMBARSTATE" ]]; then
+        export BOOMBARCONTENTFILE="$(mktemp --tmpdir boombar.$$.XXX)"
+        chmod 644 $BOOMBARCONTENTFILE &>/dev/null
+        echo -n started > $BOOMBARCONTENTFILE
         shopt -s checkwinsize
         (:) # this ensures LINES and COLUMNS are set
         BOOMBARSTATE=on
@@ -82,6 +99,7 @@ boombar() {
         trap _boombarinitterm WINCH # trap terminal resize
         trap _boombardeinitterm EXIT # trap exit
         _boombarinitterm
+        _boombarupdaterunner & disown
       else echo Nothing to do
       fi
     ;;
@@ -225,6 +243,8 @@ _boombarenv() {
 }
 
 _boombarupdate() {
+  [[ -z "$BOOMBARCONTENTFILE" || ! -f "$BOOMBARCONTENTFILE" ]] && return 1
+
   local prefix suffix bbmoff
   prefix=${BOOMBAR_PREFIX:-$BOOMBAR_DEFAULT_PREFIX}
   suffix=${BOOMBAR_SUFFIX:-$BOOMBAR_DEFAULT_SUFFIX}
@@ -237,15 +257,9 @@ _boombarupdate() {
   [[ "$customstrs" =~ "BTODAY" ]] && _boombarenv BOOMSTODAY
   BOOMBAR_OLDLINES=$LINES
 
-  # If bar gets in bad state, reset
-  local cursorpos
-  read -sdR -p $'\E[6n' cursorpos
-  cursorpos=${cursorpos#*\[} # line;col
-  if [[ "${cursorpos%;*}" == "$LINES" ]]; then boombar exit; boombar; fi
-
   local barupdate prefix suffix linelen
   if [[ "$BOOMBOTMODE" == "no" && "$prefix" =~ "BBMREMARK" ]]; then
-    if [[ "unset" == "$BOOMBAR_BBMOFF_ALT" ]]; then
+    if [[ "unset" == "$bbmoff" ]]; then
       # Definitely a better way to do this
       prefix=${prefix//BBMREMARK /}
       prefix=${prefix// BBMREMARK/}
@@ -276,9 +290,7 @@ _boombarupdate() {
   suffcolor="[48;2;${BOOMBAR_SUFF_RGBBG:-78;78;78}m"
   barupdate="$(printf '\033%s\033%s%*.*s\033%s' "$prefcolor $prefix " "$spacecolor" $linelen $linelen " " "$suffcolor $suffix ")"
 
-  if [[ "$BOOMBARCONTENT" == "$barupdate" && "$BOOMBARLASTCOLS" == "$COLUMNS" ]]; then return
-  else BOOMBARCONTENT="$barupdate"; BOOMBARLASTCOLS=$COLUMNS
-  fi
+  BOOMBARCONTENT="$barupdate"
 
   # Handle when bar is too short for content
   local barestring warnline
@@ -296,19 +308,70 @@ _boombarupdate() {
     linelen=$((COLUMNS - ${#warnline} - 2 - extraspaces)) # 2 for spaces on either side
     BOOMBARCONTENT="$(printf '\033%s\033%s%*.*s' "$prefcolor $warnline " "$spacecolor" $linelen $linelen " ")"
   fi
+  printf '%s' "$BOOMBARCONTENT" > $BOOMBARCONTENTFILE
+}
 
-	printf '\0337' # save the cursor location
-	  printf '\033[%d;%dH' "$LINES" 0 # move cursor to the bottom line
-	  printf '\033[0K' # clear the line
+_boombardrawer() {
+  _in_altscreen && return
 
-    # Print bar if on correct line
-    read -sdR -p $'\E[6n' cursorpos
-    cursorpos=${cursorpos#*\[} # line;col
-    if [[ "${cursorpos%;*}" == "$((LINES - 1))" ]]; then boombar exit; boombar; fi
-    printf '%s' "$BOOMBARCONTENT" # print boombar
+  printf '\0337' # save the cursor location
+    printf '\033[%d;%dH' "$LINES" 0 # move cursor to the bottom line
+    printf '\033[0K' # clear the line
 
-	printf '\0338' # restore the cursor location
+    cat $BOOMBARCONTENTFILE 2>/dev/null # print boombar
+
+  printf '\0338' # restore the cursor location
   printf '\033[K' # clean up rest of line in case bar pooped itself
+}
+
+_boombarupdaterunner() {
+  if [ -f $BOOMBARCONTENTFILE ]; then
+    echo -n initializing > $BOOMBARCONTENTFILE
+    BOOMBARCONTENT=
+    _boombarupdate
+    _boombardrawer
+  fi
+
+  local startupprefix="$BOOMBAR_PREFIX"
+  local boomnotify
+  while :; do
+    if [ ! -f "$BOOMBARCONTENTFILE" ]; then boombar exit; break; fi
+
+    boomnotify="$(tail -n 1 $_boomNotify 2>/dev/null)"
+    if [[ -n "$boomnotify" ]]; then
+      BOOMBAR_PREFIX="$boomnotify"
+    else
+      BOOMBAR_PREFIX="$startupprefix"
+    fi
+
+    if ! _in_altscreen; then
+      printf '\0337' # save the cursor location
+        printf '\033[%d;%dr' 0 "$((LINES - 1))" # set the scrollable region (margin)
+      printf '\0338' # reset the cursor location
+
+      local currstate="$(cat $BOOMBARCONTENTFILE 2>/dev/null)"
+      if [[ "$currstate" =~ ^"stashed" ]]; then
+        sed -i 's/stashed//' $BOOMBARCONTENTFILE 2>/dev/null
+      fi
+
+      _boombarupdate
+
+      # Draw bar if it has changed
+      [[ "$(cat $BOOMBARCONTENTFILE 2>/dev/null)" != "$currstate" ]] && _boombardrawer
+    else
+      local currstate="$(cat $BOOMBARCONTENTFILE 2>/dev/null)"
+
+      if [[ ! "$currstate" =~ ^"stashed" ]]; then
+        printf '\0337' # save the cursor location
+          printf '\033[%d;%dr' 0 "$LINES" # reset the scrollable region (margin)
+          printf '\033[%d;%dH' "$LINES" 0 # move cursor to the bottom line
+          printf '\033[0K' # clear the line
+        printf '\0338' # reset the cursor location
+        echo -n "stashed$currstate" > $BOOMBARCONTENTFILE
+      fi
+    fi
+    sleep 1
+  done
 }
 
 # Completion
