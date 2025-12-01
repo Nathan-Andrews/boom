@@ -149,6 +149,9 @@ async function boomFetch(endpoint, body = {}) {
             else if (response.status === 504 || response.status === 503) {
                 console.error("Timeout Error","The server took too long to respond. Retrying...");
             }
+            else if (response.status === 504) {
+                console.error("Timeout Error","The server took too long to respond. Retrying...");
+            }
             else {
                 showAlert("Error",err);
             }
