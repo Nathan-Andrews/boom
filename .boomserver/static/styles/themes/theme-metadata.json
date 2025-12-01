@@ -1,0 +1,148 @@
+{
+    "themes": [
+        {
+            "id": "palenight",
+            "name": "Default (Palenight)",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "oceanic",
+            "name": "Oceanic",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "darker",
+            "name": "Darker",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "lighter",
+            "name": "Lighter",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "deep-ocean",
+            "name": "Deep Ocean",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "forest",
+            "name": "Forest",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "sky-blue",
+            "name": "Sky Blue",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "sandy-beach",
+            "name": "Sandy Beach",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "volcano",
+            "name": "Volcano",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "space",
+            "name": "Space",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "monokai-pro",
+            "name": "Monokai Pro",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "dracula",
+            "name": "Dracula",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "github-dark",
+            "name": "Github Dark",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "github-light",
+            "name": "Github Light",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "arc-dark",
+            "name": "Arc Dark",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "one-dark",
+            "name": "One Dark",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "one-light",
+            "name": "One Light",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "solarized-light",
+            "name": "Solarized Light",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "solarized-dark",
+            "name": "Solarized Dark",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "night-owl",
+            "name": "Night Owl",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "light-owl",
+            "name": "Light Owl",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "moonlight",
+            "name": "Moonlight",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "synthwave",
+            "name": "Synthwave '84",
+            "author": "Material Theme",
+            "user-defined": false
+        },
+        {
+            "id": "pastel-pink",
+            "name": "Pastel Pink",
+            "author": "Nathan",
+            "user-defined": false
+        }
+    ]
+}
