@@ -141,6 +141,9 @@ async function boomFetch(endpoint, body = {}) {
                 eraseCookie('boomToken');
                 showAlert("Token Error","Please reload the boom zone");
             }
+            else if (response.status === 504) {
+                console.error("Timeout Error","The server took too long to respond. Retrying...");
+            }
             else {
                 showAlert("Error",err);
             }
