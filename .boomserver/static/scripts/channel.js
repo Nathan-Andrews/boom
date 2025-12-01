@@ -16,7 +16,6 @@ function createChannelConnectionOnPopup() {
     });
 }
 
-function publishToChannel(message) {
     const channel = new BroadcastChannel("customization_popup_channel");
 
     channel.postMessage(message);
