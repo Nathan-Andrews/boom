@@ -1,0 +1,10 @@
+:root {
+    --background-color: #212121;
+    --primary-color: #292929;
+    --secondary-color: #3F3F3F;
+    --text-color: #eeffff;
+    --text-emphasis-color: #f07178;
+    --default-user-text-color: #c792ea;
+    --fav-user-text-color: #FF9800;
+    --bot-user-text-color: #82aaff;
+}
