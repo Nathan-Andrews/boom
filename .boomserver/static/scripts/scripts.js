@@ -261,9 +261,9 @@ async function fetchBoomBoardDrought() {
     return retVal;
 }
 
-// fetch the boom patch
+// fetch the boom drought board
 async function fetchBoomPatch() {
-    const data = await boomFetch("/run_boom_patchnotes_current_command");
+    const data = await boomFetch("/run_boom_patchnotes_current_command", { boardcmd : "drought" });
 
     let retVal = data.output;
 
@@ -272,9 +272,9 @@ async function fetchBoomPatch() {
     return retVal;
 }
 
-// fetch the boom hall
+// fetch the boom drought board
 async function fetchBoomHall() {
-    const data = await boomFetch("/run_boom_hall_command");
+    const data = await boomFetch("/run_boom_hall_command", { boardcmd : "drought" });
 
     let retVal = data.output;
 
