@@ -104,7 +104,7 @@ function replaceBoomNumbers(input) {
     const regex = /\d+(\.\d+)?💥/g;
     return input.replace(regex, (match) => {
         const numberPart = match.slice(0, -2);
-        return `<span style='color:#f07178; font-weight: bold;'>${numberPart}  </span>`;
+        return `<span class="boom-number"'>${numberPart}  </span>`;
     }
     );
 }
@@ -253,9 +253,9 @@ async function fetchBoomBoardDrought() {
     return retVal;
 }
 
-// fetch the boom patch
+// fetch the boom drought board
 async function fetchBoomPatch() {
-    const data = await boomFetch("/run_boom_patchnotes_current_command");
+    const data = await boomFetch("/run_boom_patchnotes_current_command", { boardcmd : "drought" });
 
     let retVal = data.output;
 
@@ -264,9 +264,9 @@ async function fetchBoomPatch() {
     return retVal;
 }
 
-// fetch the boom hall
+// fetch the boom drought board
 async function fetchBoomHall() {
-    const data = await boomFetch("/run_boom_hall_command");
+    const data = await boomFetch("/run_boom_hall_command", { boardcmd : "drought" });
 
     let retVal = data.output;
 
@@ -517,7 +517,7 @@ async function fetchBoommeterFileContent() {
                 if (/^@[a-zA-z]+$/.test(word)) {
                     if (word.toLowerCase().includes('bot')) {
                         wordElement.className = 'username-bot';
-                    } else if (username === boomFavUsername) {
+                    } else if (word === "@" + boomFavUsername) {
                         wordElement.className = 'username-fav';
                     } else {
                         wordElement.className = 'username';
@@ -564,4 +564,3 @@ window.onerror = function(message, source, lineno, colno, error) {
     showAlert("uncaught error",message);
     return true;
 };
-
