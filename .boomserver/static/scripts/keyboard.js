@@ -9,10 +9,14 @@ document.addEventListener('keydown', function(event) {
 
     if (event.key === 'l' && fullyLoaded) {
         if (holiday === "THANKSGIVING")
-            startSeasonalSnowEffect("🍁");
+            startSeasonalSnowEffect("🍁",{sizeMin: 32, sizeMax: 64});
         
         if (holiday === "CHRISTMAS")
             startSeasonalSnowEffect("❄️");
+    }
+
+    if (event.key === "p"  && fullyLoaded) {
+        window.open("popup.html", "_blank", "width=600,height=400");
     }
 });
 
