@@ -15,7 +15,7 @@ This will get you set up as a BOOMBOSS and set up the default `.boomconfig` file
 
 Once the boom installer has run, take a look at `${XDG_DATA_HOME:-~/.local/share}/boom/.boomconfig` and make sure the variables set there look alright. The breakdown of what each variable means is below.
 
-Now, `source ~/.boomrc` to see the intro message and instructions on how to run the boommeter after each command.
+Now, `source ~/.boomrc` to see the intro message and instructions on how to run the boommeter after each command. Don't miss adding the recommended `PROMPT_COMMAND` and `source ~/.boomrc` lines to your `.bashrc` on install as described in the intro message.
 
 If you would like to set up the `BOOM Zone` website, just run the `.siteconfig.bash` script in the top level of the cloned repo.
 
@@ -77,13 +77,17 @@ To run the boom, you will need `bash 4.4` or higher, as well as typical bash uti
 
 To run the server, you will need `python3.9` or higher, with the `bcrypt` and `flask` packages installed.
 
+## Uninstalling
+
+Uninstallation is very straightforward. To uninstall all files created outside of the repo clone, just `rm -rf /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL` and `rm ~/.boomrc`! Be aware that this will erase all personal data, such as rankings and records. Each user will also need to remove their `~/$BOOMINSTALL` directory to uninstall. The repo clone itself must also be removed, of course. If the site was set up as a service, that service file will need to be removed as well.
+
 ## 
 
 💥💥💥💥💥 Have fun booming! 💥💥💥💥💥
 
 
 ## Docs
-The below boomdocs output was generated as of patch 2.8.1:
+The below boomdocs output was generated as of patch 2.8.2:
 
 ```text
 Commands in the .boomrc suite:
@@ -293,9 +297,10 @@ Commands in the .boomrc suite:
 ```
 
 ## Patch Notes
-The below patchnotes output was generated as of patch 2.8.1:
+The below patchnotes output was generated as of patch 2.8.2:
 
 ```text
+# 2.8.2  - installation bug fixes
 # 2.8.1  - boombar handles boomnotify file if on
 # 2.8.0  - major boombar improvements - bar updates in background and works better with less, man, vim, etc
 # 2.7.10 - mentions handled in `chat edit`

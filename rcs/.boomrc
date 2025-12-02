@@ -204,6 +204,7 @@
 # 2.7.10 - mentions handled in `chat edit`
 # 2.8.0  - major boombar improvements - bar updates in background and works better with less, man, vim, etc
 # 2.8.1  - boombar handles boomnotify file if on
+# 2.8.2  - installation bug fixes
 
 DOOMBOOM=
 # Multiple ways to have BOOMCFGFILE set:
@@ -230,9 +231,8 @@ if [ -z "$BOOMSITERUNNER" ]; then
     : ${2?Error: checkConfigArgs called for $1 without DEFAULT}
 
     if [[ -f "$BOOMCFGFILE" && -z "${!1}" ]]; then
-      readonly $1="$2" &>/dev/null
       echo "readonly $1=\"$2\" &>/dev/null" >> $BOOMCFGFILE
-      echo $1 not set - Defaulting to ${!1} - Change this in $BOOMCFGFILE
+      echo $1 not set - Defaulting to $2 - Change this in $BOOMCFGFILE
     fi
   }
 
@@ -253,6 +253,8 @@ if [ -z "$BOOMSITERUNNER" ]; then
   checkConfigArgs BOOMSITE    "http://$HOSTNAME:$BOOMPORT"
   checkConfigArgs BOOMSITECMD "firefox --new-tab"
   unset tmpconfig
+
+  source $BOOMCFGFILE
 else
   source $BOOMCFGFILE
 fi
@@ -328,14 +330,14 @@ if [ ! -w /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL ]; then export DOOMBOOM=yes; fi
 
 # Each dir to boominstall needs to be accessible by all users
 longpath=
-EXPECTED_BOOMINSTALL="/$BOOMUSERDIR/$USER/$BOOMINSTALL"
-for path in ${EXPECTED_BOOMINSTALL//\// }; do
+EXP_BOOMINSTALL="/$BOOMUSERDIR/$USER/$BOOMINSTALL"
+for path in ${EXP_BOOMINSTALL//\// }; do
   if [[ ! " 777 755 " =~ " $(stat -c "%a" "$longpath/$path") " ]]; then
     chmod 755 "$longpath/$path" || export DOOMBOOM=yes
   fi
   longpath+="/$path"
 done
-unset longpath EXPECTED_BOOMINSTALL
+unset longpath EXP_BOOMINSTALL
 
 case $HISTCONTROL in
   *ignoreboth*) ;&
@@ -909,7 +911,7 @@ alias boomhelp="_boomIntroTxt flag"
 # "\t\tsee \`boomdocs\` for other boom-related command help";
 # "\t\tuse options below in place of <cmd> <opts>";
 # "";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman _boom-.*")";
+# "$(bash -l -c "source $BOOMCFGFILE 2>/dev/null; export BOOMCFGFILE=$BOOMCFGFILE; source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomdocsrc 2>/dev/null; _boomrcman _boom-.*")";
 # "\t\t${B}help${N}\n\t\t\tprints this help message";
 ###
 ###SubFunction _boom-avg

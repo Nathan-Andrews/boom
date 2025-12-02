@@ -3,61 +3,62 @@
 ## BOOM env allows running boom commands without the `boom` - we assume the boom context
 BOOMENV=""
 
+# ExcAlias docs printing de-aliased docs won't work if user doesn't source .boomrc in .bashrc
 ###ExcAlias avg
 # "\t${B}avg${N}\n\t\tboom env alias for boomavg";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boomavg")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boomavg 2>/dev/null")";
 ###
 ###ExcAlias board
 # "\t${B}board${N}\n\t\tboom env alias for boom board";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-board")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-board 2>/dev/null")";
 ###
 ###ExcAlias drought
 # "\t${B}drought${N}\n\t\tboom env alias for boom drought";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-drought")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-drought 2>/dev/null")";
 ###
 ###ExcAlias favorite
 # "\t${B}favorite${N}\n\t\tboom env alias for boom favorite";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-favorite")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-favorite 2>/dev/null")";
 ###
 ###ExcAlias hall
 # "\t${B}hall${N}\n\t\tboom env alias for boom hall";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-hall")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-hall 2>/dev/null")";
 ###
 ###ExcAlias latest
 # "\t${B}latest${N}\n\t\tboom env alias for boom latest";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-latest")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-latest 2>/dev/null")";
 ###
 ###ExcAlias meter
 # "\t${B}meter${N}\n\t\tboom env alias for boommeter";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boommeter")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boommeter 2>/dev/null")";
 ###
 ###ExcAlias patchnotes
 # "\t${B}patchnotes${N}\n\t\tboom env alias for boom patchnotes";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-patchnotes")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-patchnotes 2>/dev/null")";
 ###
 ###ExcAlias todo
 # "\t${B}todo${N}\n\t\tboom env alias for boom todo";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-todo")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-todo 2>/dev/null")";
 ###
 ###ExcAlias total
 # "\t${B}total${N}\n\t\tboom env alias for boom total";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-total")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-total 2>/dev/null")";
 ###
 ###ExcAlias zone
 # "\t${B}zone${N}\n\t\tboom env alias for boom zone";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-zone")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boom-zone 2>/dev/null")";
 ###
 ###ExcAlias bot
 # "\t${B}bot${N}\n\t\tboom env alias for boombot";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boombot")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boombot 2>/dev/null")";
 ###
 ###ExcAlias bar
 # "\t${B}bar${N}\n\t\tboom env alias for boombar";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boombar")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boombar 2>/dev/null")";
 ###
 ###ExcAlias docs
 # "\t${B}docs${N}\n\t\tboom env alias for boomdocs";
-# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boomdocs")";
+# "$(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman boomdocs 2>/dev/null")";
 ###
 command -v avg &>/dev/null        || { alias avg='boomavg'                && BOOMENV+="avg";         }
 command -v board &>/dev/null      || { alias board='boom board'           && BOOMENV+=" board";      }

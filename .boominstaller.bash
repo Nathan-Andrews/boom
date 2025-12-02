@@ -68,8 +68,16 @@ done
 # Each dir to boomrcs needs to be accessible by all users
 longpath=
 for path in ${EXPECTED_BOOMRCS//\// }; do
-  if [[ ! " 777 755 " =~ " $(stat -c "%a" "$longpath/$path") " ]]; then
-    echo ERROR: $longpath/$path is not 755 or higher - please chmod and try script again
+  if [[ ! " 777 755 " =~ " $(stat -c "%a" "$longpath/$path") " && "$1" != "skippermcheck" ]]; then
+    echo "WARNING: $longpath/$path is not 755 or higher - please chmod and try script again"
+    echo
+    echo "         If planning to use boom with multiple users, all users must be able to see"
+    echo "          and copy the boom rc files in the boss' home directory. This can look"
+    echo "          like a shared users group or lenient access perms to BOOMRCS. Because"
+    echo "          this is a local development tool, we are not as worried about permission security."
+    echo
+    echo "         If using a shared group or only a single user, run this script as \`$0 skippermcheck\`"
+    echo "          to ignore warning."
     unset longpath
     exit 1
   fi

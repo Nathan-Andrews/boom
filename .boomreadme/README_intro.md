@@ -15,7 +15,7 @@ This will get you set up as a BOOMBOSS and set up the default `.boomconfig` file
 
 Once the boom installer has run, take a look at `${XDG_DATA_HOME:-~/.local/share}/boom/.boomconfig` and make sure the variables set there look alright. The breakdown of what each variable means is below.
 
-Now, `source ~/.boomrc` to see the intro message and instructions on how to run the boommeter after each command.
+Now, `source ~/.boomrc` to see the intro message and instructions on how to run the boommeter after each command. Don't miss adding the recommended `PROMPT_COMMAND` and `source ~/.boomrc` lines to your `.bashrc` on install as described in the intro message.
 
 If you would like to set up the `BOOM Zone` website, just run the `.siteconfig.bash` script in the top level of the cloned repo.
 
@@ -76,6 +76,10 @@ If the site is in use and the site files have changed since the last update, cop
 To run the boom, you will need `bash 4.4` or higher, as well as typical bash utilities, such as `sed`, `awk`, `date`, and `curl`.
 
 To run the server, you will need `python3.9` or higher, with the `bcrypt` and `flask` packages installed.
+
+## Uninstalling
+
+Uninstallation is very straightforward. To uninstall all files created outside of the repo clone, just `rm -rf /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL` and `rm ~/.boomrc`! Be aware that this will erase all personal data, such as rankings and records. Each user will also need to remove their `~/$BOOMINSTALL` directory to uninstall. The repo clone itself must also be removed, of course. If the site was set up as a service, that service file will need to be removed as well.
 
 ## 
 
