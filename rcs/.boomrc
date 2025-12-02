@@ -205,6 +205,8 @@
 # 2.8.0  - major boombar improvements - bar updates in background and works better with less, man, vim, etc
 # 2.8.1  - boombar handles boomnotify file if on
 # 2.8.2  - installation bug fixes
+# 2.8.3  - handle doom state in background bar updater
+# 2.8.4  - restore boombot bar integration with background updater - lastbooms and bbmremark use global tmp files
 
 DOOMBOOM=
 # Multiple ways to have BOOMCFGFILE set:
@@ -564,10 +566,12 @@ _boommeterrunner() {
     if [[ "$BOOMBOTMODE" == "yes" ]]; then
       local remark=$(_bbmRemark $cmd)
       if [ -n "$BOOMBARSTATE" ]; then
-        declare -f _boombarenv &>/dev/null && _boombarenv BBMREMARK "${remark//" $_BE_HOLE"}"
+        declare -f _boombarenv &>/dev/null && _boombarenv BBMREMARK "${remark//" $_BE_HOLE"}" 2>/dev/null
       else
         echo $remark
       fi
+    elif [[ -n "$BOOMBARSTATE" && -f "/tmp/.boombar-bbmremark" ]]; then
+      rm /tmp/.boombar-bbmremark 2>/dev/null
     fi
     if [[ ${BOOMBOTCHATFREQ:-225} =~ [1-9]+ && $(( $RANDOM % ${BOOMBOTCHATFREQ:-225} )) -eq 25 ]]; then
       echo boombot: $(_bbmRemark $cmd | sed -e "s/your/$USER's/g" -e "s/you/$USER/g") >> $_boommeterLog
@@ -652,7 +656,7 @@ boommeter() {
 
   local term
   if $logrun; then
-    declare -f _boombarenv &>/dev/null && _boombarenv LASTBOOM $score $1
+    declare -f _boombarenv &>/dev/null && _boombarenv LASTBOOM $score $1 2>/dev/null
     if [[ "$1" =~ ^[^!/.[\"\']+$ ]]; then
       _boomlog $1 $score
       term=$1
@@ -1820,7 +1824,7 @@ _boombot() {
   elif [[ "$1" == "exit" ]]; then return; fi
   if [[ "$BOOMBOTMODE" == "yes" ]]; then return; fi
   export BOOMBOTMODE=yes
-  export BOOMBAR_BBMREMARK="$_BE_BOT BoomBot likes it here $_BE_BOT"
+  [[ -n "$BOOMBARSTATE" ]] && echo "export BOOMBAR_BBMREMARK=\"$_BE_BOT BoomBot likes it here $_BE_BOT\"" > /tmp/.boombar-bbmremark
   _boomRegularPs1=$PS1
   PS1='\[\033[00m\]$(declare -f _boombotprompt &>/dev/null && _boombotprompt || echo -e  "'"$_BE_BOT"' \033[1;32mboombot\033[00m@\033[1;34m\h\033[00m \w ")$([ -n "$BOOMBOTPROMPTCMD" ] && type $BOOMBOTPROMPTCMD &>/dev/null && $(echo $BOOMBOTPROMPTCMD))\[\033[00m\] > '
 }
@@ -2776,7 +2780,7 @@ fi
 
 # Long term todos
 #TODO: more boombot remarks
-#TODO: boombar - add boombar options and play better with man pages
+#TODO: boombar - add boombar options
 #TODO: assess additional args with boomssh/exec
 #TODO: use more shell builtins for optimization - $EPOCHSECONDS instead of some dates, $BASH_REMATCH instead of some seds
 #TODO: maybe reward if X+ booms are imported at once to make up for missing super boom milestones (25 multiples)

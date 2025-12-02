@@ -87,7 +87,7 @@ Uninstallation is very straightforward. To uninstall all files created outside o
 
 
 ## Docs
-The below boomdocs output was generated as of patch 2.8.2:
+The below boomdocs output was generated as of patch 2.8.4:
 
 ```text
 Commands in the .boomrc suite:
@@ -297,9 +297,11 @@ Commands in the .boomrc suite:
 ```
 
 ## Patch Notes
-The below patchnotes output was generated as of patch 2.8.2:
+The below patchnotes output was generated as of patch 2.8.4:
 
 ```text
+# 2.8.4  - restore boombot bar integration with background updater - lastbooms and bbmremark use global tmp files
+# 2.8.3  - handle doom state in background bar updater
 # 2.8.2  - installation bug fixes
 # 2.8.1  - boombar handles boomnotify file if on
 # 2.8.0  - major boombar improvements - bar updates in background and works better with less, man, vim, etc
