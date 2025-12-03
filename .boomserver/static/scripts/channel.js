@@ -3,6 +3,8 @@ function createChannelConnection() {
 
     channel.addEventListener('message', (event) => {
         console.log('Received message:', event.data);
+        
+        setTheme(event.data)
     });
 }
 
@@ -12,4 +14,11 @@ function createChannelConnectionOnPopup() {
     channel.addEventListener('message', (event) => {
         console.log('Received message:', event.data);
     });
+}
+
+function publishToChannel(message) {
+    const channel = new BroadcastChannel("customization_popup_channel");
+
+    channel.postMessage(message);
+    saveTheme({type:"SAVED",id:message})
 }
