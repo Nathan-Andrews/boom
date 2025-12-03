@@ -1,0 +1,13 @@
+:root {
+    --background-color: #2632384b;
+    --primary-color: #1e272c86;
+    --secondary-color: #292f4d00;
+
+    --text-color: #eeffff;
+    --text-emphasis-color: #f78c6c;
+    --default-user-text-color: #80cbc4;
+    --fav-user-text-color: #f78c6c;
+    --bot-user-text-color: #89ddff;
+
+    --background-image-url: url('../assets/media/dresden.png');
+}

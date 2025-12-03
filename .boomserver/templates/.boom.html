@@ -1,12 +1,15 @@
 <!DOCTYPE html>
-<!--Thanks Nathan for the entire frontend-->
+<!--Shoutout Nathan for the entire site-->
 <html lang="en">
     <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <title>BOOM zone</title>
         <link rel="stylesheet" href="static/styles/styles.css"/>
+        <link id="theme-style" rel="stylesheet" href="static/styles/themes/palenight.css">
         <script src="static/lib/crypto.js"></script>
+        <script src="static/scripts/channel.js"></script>
+        <script src="static/scripts/theme.js"></script>
         <script src="static/scripts/helper.js"></script>
         <script src="static/scripts/cookies.js"></script>
         <script src="static/scripts/keyboard.js"></script>
@@ -14,41 +17,43 @@
         <script src="static/scripts/scripts.js"></script>
     </head>
     <body>
-        <div style='text-align: center;'>
-            <h1>💥💥💥💥💥 Welcome to the <span class="hover-red"> BOOM </span> zone! 💥💥💥💥💥</h1>
-        </div>
-        <div class="container" id="passwordContainer">
-            <div class="password-prompt" id="passwordPrompt">
-                <h1>Enter Password to Access the BOOM Zone</h1>
-                <input type="password" id="passwordInput" placeholder="Enter password">
-                <button onclick="checkPassword()">Submit</button>
+        <div class="all" id="all">
+            <div style='text-align: center;'>
+                <h1>💥💥💥💥💥 Welcome to the <span class="hover-red"> BOOM </span> zone! 💥💥💥💥💥</h1>
             </div>
-        </div>
-        <div class="container" id="loadingContainer">
-            <div class="loading" id="loading">
-                <div class="loading-bar">
-                    <h1>loading...</h1>
-                    <div id="loading-bar"></div>
+            <div class="container" id="passwordContainer">
+                <div class="password-prompt" id="passwordPrompt">
+                    <h1>Enter Password to Access the BOOM Zone</h1>
+                    <input type="password" id="passwordInput" placeholder="Enter password">
+                    <button onclick="checkPassword()">Submit</button>
                 </div>
             </div>
-        </div>
-        <div class="container" id="alertContainer">
-            <div class="alert" id="alert">
-                <div class="alert-box">
-                    <h1 id="alertHeader"></h1>
-                    <h3 id="alertBody"></h3>
+            <div class="container" id="loadingContainer">
+                <div class="loading" id="loading">
+                    <div class="loading-bar">
+                        <h1>loading...</h1>
+                        <div id="loading-bar"></div>
+                    </div>
                 </div>
             </div>
-        </div>
-        <div class="container" id="contentContainer">
-            <div class="content" onClick="contentClick()">
-                <pre class="output" id="output" >Loading Boom Boards...</pre>
+            <div class="container" id="alertContainer">
+                <div class="alert" id="alert">
+                    <div class="alert-box">
+                        <h1 id="alertHeader"></h1>
+                        <h3 id="alertBody"></h3>
+                    </div>
+                </div>
             </div>
-            <div class="file-content">
-                <pre class="log-file-content" id="log-file-content">Loading Random Boom Log...</pre>
-            </div>
-            <div class="file-content">
-                <pre class="boommeter-file-content" id="boommeter-file-content">Loading Boom Chat...</pre>
+            <div class="container" id="contentContainer">
+                <div class="content" onClick="contentClick()">
+                    <pre class="output" id="output" >Loading Boom Boards...</pre>
+                </div>
+                <div class="file-content">
+                    <pre class="log-file-content" id="log-file-content">Loading Random Boom Log...</pre>
+                </div>
+                <div class="file-content">
+                    <pre class="boommeter-file-content" id="boommeter-file-content">Loading Boom Chat...</pre>
+                </div>
             </div>
         </div>
     </body>
@@ -60,6 +65,8 @@
 <!-- DONE: favorite user highlight -->
 <!-- DONE: seasonal leaf/snow effect -->
 <!-- DONE: error handling -->
+<!-- TODO: fix table header -->
+<!-- TODO: restyle password prompt -->
 <!-- TODO: save local user preferences -->
 <!-- TODO: context click menu -->
 <!-- TODO: auto cycle boom board -->

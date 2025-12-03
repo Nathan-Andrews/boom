@@ -1,0 +1,13 @@
+:root {
+    --background-color: #1b224080;
+    --primary-color: #060f2fb9;
+    --secondary-color: #292f4d00;
+
+    --text-color: #dbdee2;
+    --text-emphasis-color: #f07178;
+    --default-user-text-color: #c792ea;
+    --fav-user-text-color: #89ddff;
+    --bot-user-text-color: #82aaff;
+
+    --background-image-url: url('../assets/media/galaxy.png');
+}
