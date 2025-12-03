@@ -1,0 +1,13 @@
+:root {
+    --background-color: #1b2f524b;
+    --primary-color: #01162786;
+    --secondary-color: #292f4d00;
+
+    --text-color: #c8d3f5;
+    --text-emphasis-color: #f3c1ff;
+    --default-user-text-color: #baacff;
+    --fav-user-text-color: #34d3fb;
+    --bot-user-text-color: #70b0ff;
+
+    --background-image-url: url('../assets/media/cabin.jpg');
+}

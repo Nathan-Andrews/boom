@@ -34,6 +34,13 @@ async function checkPassword() {
     }
 }
 
+function closeLoadingBar() {
+    isLoading = false;
+    fullyLoaded = true;
+    // show page
+    document.getElementById('loadingContainer').style.display = 'none';
+}
+
 async function loadContent() {
     document.getElementById('passwordContainer').style.display = 'none';
     isLoading = true;
@@ -54,10 +61,7 @@ async function loadContent() {
         // setInterval(fetchLogFileContent, 15000);
         // setInterval(fetchBoommeterFileContent, 1000);
 
-        isLoading = false;
-        fullyLoaded = true;
-        // show page
-        document.getElementById('loadingContainer').style.display = 'none';
+        closeLoadingBar();
     });
 }
 
@@ -104,7 +108,7 @@ function replaceBoomNumbers(input) {
     const regex = /\d+(\.\d+)?💥/g;
     return input.replace(regex, (match) => {
         const numberPart = match.slice(0, -2);
-        return `<span style='color:#f07178; font-weight: bold;'>${numberPart}  </span>`;
+        return `<span class="boom-number"'>${numberPart}  </span>`;
     }
     );
 }
@@ -150,7 +154,7 @@ async function boomFetch(endpoint, body = {}) {
 
             // retry request after delay
             retries += 1;
-            sleep(1000 * retries);
+            sleep(1000 * retries * retries);
 
             continue;
         }
@@ -253,9 +257,9 @@ async function fetchBoomBoardDrought() {
     return retVal;
 }
 
-// fetch the boom patch
+// fetch the boom drought board
 async function fetchBoomPatch() {
-    const data = await boomFetch("/run_boom_patchnotes_current_command");
+    const data = await boomFetch("/run_boom_patchnotes_current_command", { boardcmd : "drought" });
 
     let retVal = data.output;
 
@@ -264,9 +268,9 @@ async function fetchBoomPatch() {
     return retVal;
 }
 
-// fetch the boom hall
+// fetch the boom drought board
 async function fetchBoomHall() {
-    const data = await boomFetch("/run_boom_hall_command");
+    const data = await boomFetch("/run_boom_hall_command", { boardcmd : "drought" });
 
     let retVal = data.output;
 
@@ -517,7 +521,7 @@ async function fetchBoommeterFileContent() {
                 if (/^@[a-zA-z]+$/.test(word)) {
                     if (word.toLowerCase().includes('bot')) {
                         wordElement.className = 'username-bot';
-                    } else if (username === boomFavUsername) {
+                    } else if (word === "@" + boomFavUsername) {
                         wordElement.className = 'username-fav';
                     } else {
                         wordElement.className = 'username';
@@ -547,6 +551,7 @@ window.onload = function() {
 
         loadContent();
 
+        createChannelConnection();
     } else {
         document.getElementById('passwordContainer').style.display = 'flex';
 
@@ -564,4 +569,3 @@ window.onerror = function(message, source, lineno, colno, error) {
     showAlert("uncaught error",message);
     return true;
 };
-

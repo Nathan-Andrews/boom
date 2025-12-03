@@ -1,0 +1,13 @@
+:root {
+    --background-color: #010e1a4b;
+    --primary-color: #01162786;
+    --secondary-color: #292f4d00;
+
+    --text-color: #ebeef3;
+    --text-emphasis-color: #7e57c2;
+    --default-user-text-color: #c792ea;
+    --fav-user-text-color: #ecc48d;
+    --bot-user-text-color: #82aaff;
+
+    --background-image-url: url('../assets/media/oeschinensee.png');
+}

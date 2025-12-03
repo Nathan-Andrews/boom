@@ -5,16 +5,34 @@ document.addEventListener('keydown', function(event) {
 
     if (event.key === 'Escape') {
         hideAlert();
+
+        closeLoadingBar();
     }
 
     if (event.key === 'l' && fullyLoaded) {
         if (holiday === "THANKSGIVING")
-            startSeasonalSnowEffect("🍁");
+            startSeasonalSnowEffect("🍁",{sizeMin: 32, sizeMax: 64});
         
         if (holiday === "CHRISTMAS")
             startSeasonalSnowEffect("❄️");
     }
+
+    if (event.key === "c"  && fullyLoaded) {
+        window.open("popup.html", "_blank", "width=600,height=400");
+    }
+
+    if (event.key === "b" && fullyLoaded) {
+        if (hidden) {
+            document.getElementById('all').style.display = 'contents';
+            hidden = false;
+        } else {
+            document.getElementById('all').style.display = 'none';
+            hidden = true;
+        }
+    }
 });
+
+let hidden = false;
 
 // alert system for showing errors, and in the future maybe other messages like announcements
 function showAlert(headerContent, bodyContent) {
@@ -31,5 +49,4 @@ function hideAlert() {
     const alertElement = document.getElementById('alertContainer');
 
     alertElement.style.display = 'none';
-}
-
+} 
