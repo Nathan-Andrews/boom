@@ -77,7 +77,7 @@ To run the boom, you will need `bash 4.4` or higher, as well as typical bash uti
 
 To run the server, you will need `python3.9` or higher, with the `bcrypt` and `flask` packages installed.
 
-## Uninstalling
+## Uninstall
 
 Uninstallation is very straightforward. To uninstall all files created outside of the repo clone, just `rm -rf /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL` and `rm ~/.boomrc`! Be aware that this will erase all personal data, such as rankings and records. Each user will also need to remove their `~/$BOOMINSTALL` directory to uninstall. The repo clone itself must also be removed, of course. If the site was set up as a service, that service file will need to be removed as well.
 
@@ -87,7 +87,7 @@ Uninstallation is very straightforward. To uninstall all files created outside o
 
 
 ## Docs
-The below boomdocs output was generated as of patch 2.8.4:
+The below boomdocs output was generated as of patch 2.8.5:
 
 ```text
 Commands in the .boomrc suite:
@@ -297,9 +297,10 @@ Commands in the .boomrc suite:
 ```
 
 ## Patch Notes
-The below patchnotes output was generated as of patch 2.8.4:
+The below patchnotes output was generated as of patch 2.8.5:
 
 ```text
+# 2.8.5  - site config is built with emoji preferences as well as column prefs
 # 2.8.4  - restore boombot bar integration with background updater - lastbooms and bbmremark use global tmp files
 # 2.8.3  - handle doom state in background bar updater
 # 2.8.2  - installation bug fixes

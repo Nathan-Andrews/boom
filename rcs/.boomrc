@@ -207,6 +207,7 @@
 # 2.8.2  - installation bug fixes
 # 2.8.3  - handle doom state in background bar updater
 # 2.8.4  - restore boombot bar integration with background updater - lastbooms and bbmremark use global tmp files
+# 2.8.5  - site config is built with emoji preferences as well as column prefs
 
 DOOMBOOM=
 # Multiple ways to have BOOMCFGFILE set:
@@ -430,13 +431,31 @@ fi
 
 # Set up user account on site if not created
 if [[ -z "$DOOMBOOM" && -z "$BOOMSITERUNNER" && -n "$BOOMSITE" ]]; then
-  curl -X POST -H "Content-Type: application/json" -d "{\"username\": \"$USER\"}" $BOOMSITE/boomuser &>/dev/null
+  curl -m 1 -X POST -H "Content-Type: application/json" -d "{\"username\": \"$USER\"}" $BOOMSITE/boomuser &>/dev/null
 fi
 
-# Set up site config env from current env
+# Set up site config env based on current env
 if [[ -z "$DOOMBOOM" && -z "$BOOMSITERUNNER" && -w "/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/" ]]; then
-  echo "{ \"columns\": \"${BOOMTABLECOLS:-$(cat $_boomUsers | xargs)}\" }" \
+  echo "{ \"columns\": \"${BOOMTABLECOLS:-$(cat $_boomUsers | xargs)}\" }," \
     > /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"boom_emoji\": \"${_BE_BOOM}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"hole_emoji\": \"${_BE_HOLE}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"bot_emoji\": \"${_BE_BOT}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"super_emoji\": \"${_BE_SUPER}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"hog_emoji\": \"${_BE_HOG}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"import_emoji\": \"${_BE_IMPORT}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"export_emoji\": \"${_BE_EXPORT}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"check_emoji\": \"${_BE_CHECK}\" }," \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
+  echo "{ \"ignore_holiday_emojis\": \"${NOBOOMHOLIDAY+true}\" }" \
+    >> /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json
   chmod 644 /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL/.boomserver/data/env/$USER.json &>/dev/null
 fi
 
@@ -2084,7 +2103,7 @@ _chat_cmds() {
     " booms their pants."
     " booms other peoples' pants."
     " is a home wrecker."
-    " is openly homophobic."
+    " is homophobic."
     " HATES to see others win."
     " insta stalks everyone they meet."
     " asks AI very personal questions."

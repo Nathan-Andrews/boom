@@ -1,21 +1,16 @@
+import asyncio
 import os
-import subprocess
-import re
+import signal
+import threading
+import time
 
 import api.boomjson as bj # cfg helper functions
 import api.boomapi  as ba # API helper functions
+import api.boomcmds as bc # background cmd runner
 
-from flask import Flask, jsonify, render_template, send_from_directory, request
-
+from flask import Flask, jsonify, render_template, send_from_directory, request, Response
 
 app = Flask(__name__)
-
-ANSI_ESCAPE = re.compile(r'\x1B\[[0-?]*[ -/]*[@-~]')
-
-ANSI_COLORS = {
-    '49': 'table-row-odd',
-    '100': 'table-row-even',
-}
 
 DEFPASSWD = "a27c37953ea57cf95ec55e628cf518b168e7b62bc50ff0a1c8b7ab39da0f93ad"
 
@@ -27,19 +22,21 @@ BOOMPORT=<unset>
 BOOMCFGFILE=<unset>
 CMDPREFIX=f"export BOOMSITERUNNER=runner; export BOOMCFGFILE=\"{BOOMCFGFILE}\"; export BOOMSOURCE=\"/{BOOMUSERDIR}/{BOOMBOSS}/{BOOMRCS}/.boomrc\"; bash -c \"source $BOOMSOURCE &>/dev/null; "
 
-def ansi_to_html(text):
-    def replace_ansi(match):
-        code = match.group(0)
-        if code == '\x1B[0m':
-            return '</span>'
-        elif code.startswith('\x1B['):
-            class_code = code[2:-1]
-            if class_code in ANSI_COLORS:
-                return f'<span class="{ANSI_COLORS[class_code]}">'
-        return ''
+def handle_exit(*args):
+    bc.handle_exit()
 
-    text = ANSI_ESCAPE.sub(replace_ansi, text)
-    return text.replace('\n', '<br>')
+    try:
+        bg_updater.call_soon_threadsafe(lambda: None)
+    except RuntimeError:
+        # Event loop closed already
+        pass
+
+    updater_thread.join(timeout=5)
+
+    raise KeyboardInterrupt()
+
+signal.signal(signal.SIGINT, handle_exit)
+signal.signal(signal.SIGTERM, handle_exit)
 
 @app.route('/')
 def index():
@@ -57,18 +54,34 @@ def run_simple_command(cmd):
         valid_key, username = ba.validate_key(api_key)
         if not valid_key: return jsonify(error="Invalid API Key"), 401
 
-        user_cfg = bj.load_json(f"data/env/{username}.json")
-        os.environ['BOOMTABLECOLS'] = user_cfg.get('columns', '')
+        if cmd not in bc.cmd_list:
+            return jsonify(error=[f"\"{cmd}\" not in expected command list"]), 400
 
-        cmd = f'{CMDPREFIX}{cmd}"'
-        result = subprocess.run([cmd], stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True, shell=True)
-        return jsonify(output=ansi_to_html(result.stdout), error=result.stderr.splitlines())
+        user_cache = {}
+        timeout = 5
+        waited = 0
+        while waited < timeout:
+            with bc.cache_lock:
+                user_cache = bc.latest_cmd_results.get(api_key, {}).get(cmd, {})
+            if user_cache:
+                break
+            time.sleep(.05)
+            waited += .05
+
+        if not user_cache:
+            return jsonify(error=[f"No cached result exists yet for {cmd} - hit timeout"]), 503
+
+        if "error" in user_cache and user_cache["error"]:
+            return jsonify(user_cache), 500
+
+        return jsonify(user_cache)
     except Exception as e:
-        return jsonify(error=str(e)), 500
+        return jsonify(error=[str(e)]), 500
 
-@app.route('/run_command', methods=['POST'])
-def run_command():
-    return run_simple_command('boom latest && echo && boom favorite && echo && boom drought longest && echo && boom board && echo -n Patch && boom patchnotes current && echo && boom hall')
+# Legacy code
+#@app.route('/run_command', methods=['POST'])
+#def run_command():
+#    return run_simple_command('boom latest && echo && boom favorite && echo && boom drought longest && echo && boom board && echo -n Patch && boom patchnotes current && echo && boom hall')
 
 #############################
 # Individual command routes #
@@ -105,8 +118,18 @@ def run_boom_board_command():
             arg = arg.replace("-", " ")
             result = run_simple_command(f'boom board {arg}')
 
-            stdout += result.get_json()['output']
-            stderr += result.get_json()['error']
+            if isinstance(result, tuple):
+                response, code = result
+                data = response.get_json()
+            else:
+                data = result.get_json()
+                code = 200
+
+            stdout += data.get('output', '')
+            stderr.extend(data.get('error', []))
+
+            if code >= 400:
+                return jsonify(output=stdout, error=stderr), code
 
         return jsonify(output=stdout, error=stderr)
     except Exception as e:
@@ -214,5 +237,10 @@ def boompass():
     else:
         return jsonify(valid=False), 401
 
+bg_updater = asyncio.new_event_loop()
+updater_thread = threading.Thread(target=bc.start_event_loop, args=(bg_updater,CMDPREFIX), daemon=True)
+updater_thread.start()
+
 if __name__ == '__main__':
-    app.run(host='0.0.0.0', port=BOOMPORT, debug=True)
+    app.run(host='0.0.0.0', port=BOOMPORT, debug=True, threaded=True)
+

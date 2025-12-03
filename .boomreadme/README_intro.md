@@ -77,7 +77,7 @@ To run the boom, you will need `bash 4.4` or higher, as well as typical bash uti
 
 To run the server, you will need `python3.9` or higher, with the `bcrypt` and `flask` packages installed.
 
-## Uninstalling
+## Uninstall
 
 Uninstallation is very straightforward. To uninstall all files created outside of the repo clone, just `rm -rf /$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL` and `rm ~/.boomrc`! Be aware that this will erase all personal data, such as rankings and records. Each user will also need to remove their `~/$BOOMINSTALL` directory to uninstall. The repo clone itself must also be removed, of course. If the site was set up as a service, that service file will need to be removed as well.
 

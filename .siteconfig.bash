@@ -54,7 +54,7 @@ sed -i "s|<TL_BOOMINSTALL>|/$BOOMUSERDIR/$BOOMBOSS/$BOOMINSTALL|" $servicefile |
 
 read -p "Server files configured. Would you like to enable the service? [y/N]" respY
 if [[ ! " y Y yes " =~ " $respY " ]]; then
-  echo Setup complete. Run $backendfile to start the site at $BOOMSITE
+  echo Setup complete. Run \`cd $EXPECTED_BOOMINSTALL/.boomserver\; python3 ${backendfile#$EXPECTED_BOOMINSTALL/.boomserver/}\` to start the site at $BOOMSITE
   exit 0
 fi
 
