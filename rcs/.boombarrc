@@ -14,8 +14,9 @@ BOOMBAR_LASTBOOMS=""
 BOOMBAR_LASTNUM=""
 BOOMBAR_LASTCMD="$([[ -r $_boomStreak && -n $(cat $_boomStreak) ]] && { cat $_boomStreak | awk '{print $1}'; } || echo -n N/A)"
 
+# Including ssh/exec here because the handling is unreliable in those cases
 _in_altscreen() {
-  ps -t "${BOOMBAR_TTY#/dev/}" -o state=,comm= | grep -qE '^[RS].*(sl|nano|vim|top|less|man)$'
+  ps -t "${BOOMBAR_TTY#/dev/}" -o state=,comm= | grep -qE '^[RS].*(ssh|sudo|docker|podman|sl|minicom|nano|vim|screen|top|less|man)$'
 }
 
 ###Function boombar
@@ -111,6 +112,7 @@ boombar() {
 }
 
 _boombarenv() {
+  # Externally updated env vars get written to files in tmp
   case "$1" in
     DROUGHTSTAT)
       # Call with DROUGHTSTAT
@@ -121,13 +123,16 @@ _boombarenv() {
     ;;
     BBMREMARK)
       # Call with BBMREMARK <remark>
-      export BOOMBAR_BBMREMARK="$2"
+      echo "export BOOMBAR_BBMREMARK=\"$2\"" > /tmp/.boombar-bbmremark
+      source /tmp/.boombar-bbmremark
     ;;
     LASTBOOM)
       # Call with LASTBOOM <boomnum> <cmd>
-      export BOOMBAR_LASTBOOMS="$(for i in $(seq $2); do echo -n $_BE_BOOM; done)"
-      export BOOMBAR_LASTNUM="$2"
-      export BOOMBAR_LASTCMD="$3"
+      local tmpfile=/tmp/.boombar-lastboom
+      echo "export BOOMBAR_LASTBOOMS=\"$(for i in $(seq $2); do echo -n $_BE_BOOM; done)\"" > $tmpfile
+      echo "export BOOMBAR_LASTNUM=\"$2\"" >> $tmpfile
+      echo "export BOOMBAR_LASTCMD=\"$3\"" >> $tmpfile
+      source $tmpfile
     ;;
     BOOMINFO)
       export BOOMBAR_BOOMPATCH=$(boom patchnotes current | awk '{print $1}')
@@ -255,10 +260,12 @@ _boombarupdate() {
   [[ "$customstrs" =~ "BOOMPATCH" ]] && _boombarenv BOOMINFO
   [[ "$customstrs" =~ ("LASTUSERBOOM"|"BOOMFAV") ]] && _boombarenv BOOMUSERINFO
   [[ "$customstrs" =~ "BTODAY" ]] && _boombarenv BOOMSTODAY
+  [[ -f "/tmp/.boombar-bbmremark" ]] && source /tmp/.boombar-bbmremark || export BOOMBAR_BBMREMARK=
+  [[ -f "/tmp/.boombar-lastboom" ]] && source /tmp/.boombar-lastboom
   BOOMBAR_OLDLINES=$LINES
 
   local barupdate prefix suffix linelen
-  if [[ "$BOOMBOTMODE" == "no" && "$prefix" =~ "BBMREMARK" ]]; then
+  if [[ -z "$BOOMBAR_BBMREMARK" && "$prefix" =~ "BBMREMARK" ]]; then
     if [[ "unset" == "$bbmoff" ]]; then
       # Definitely a better way to do this
       prefix=${prefix//BBMREMARK /}
@@ -282,7 +289,7 @@ _boombarupdate() {
   #TODO: there's gotta be a better way here
   # boom emojis are 2 chars long in terminal, so double subtract
   [[ "$prefix" =~ "$BOOMBAR_LASTBOOMS" ]] && linelen=$((linelen-${#BOOMBAR_LASTBOOMS}))
-  [[ "$prefix" =~ "$BOOMBAR_BBMREMARK" && "$BOOMBOTMODE" == "yes" ]] && linelen=$((linelen-2)) # Assume 2 emojis on remark...
+  [[ "$prefix" =~ "$BOOMBAR_BBMREMARK" && -n "$BOOMBAR_BBMREMARK" ]] && linelen=$((linelen-2)) # Assume 2 emojis on remark...
 
   local prefcolor spacecolor suffcolor
   prefcolor="[48;2;${BOOMBAR_PREF_RGBBG:-78;78;78}m"
@@ -344,7 +351,7 @@ _boombarupdaterunner() {
       BOOMBAR_PREFIX="$startupprefix"
     fi
 
-    if ! _in_altscreen; then
+    if ! _in_altscreen && [[ -f $_doomTracker && "$(cat $_doomTracker)" != "yes" ]]; then
       printf '\0337' # save the cursor location
         printf '\033[%d;%dr' 0 "$((LINES - 1))" # set the scrollable region (margin)
       printf '\0338' # reset the cursor location

@@ -66,7 +66,8 @@ alias boomdocs="BOOMCFGFILE=$BOOMCFGFILE boomdocs"
 
 # Just print help for one command
 # '_' at start of function/alias name inserts tab at front of documentation when called with _boomrcman _<name> but will complete and work tabless with _boomrcman <name>
-# allows one documented function to call another function's documentation with $(bash -l -c "BOOMCFGFILE=$BOOMCFGFILE _boomrcman _<name>")
+# allows one documented function to call another function's documentation with $(bash -l -c "source $BOOMCFGFILE 2>/dev/null; export BOOMCFGFILE=$BOOMCFGFILE; source /$BOOMUSERDIR/$BOOMBOSS/$BOOMRCS/.boomdocsrc 2>/dev/null; _boomrcman _<name>")
+# Above subshell command is only that complicated because it assumes user doesn't source .boomrc in .bashrc - see .boomenvrc for alt example
 # only names with _ in front can have multiple words separated by -
 # _<name> takes regex
 # good example usage of this in .termrc
