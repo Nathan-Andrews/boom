@@ -1,0 +1,13 @@
+:root {
+    --background-color: #3c585d77;
+    --primary-color: #3c585da8;
+    --secondary-color: #292f4d00;
+
+    --text-color: #eeffff;
+    --text-emphasis-color: #e56a62;
+    --default-user-text-color: #fc8b51;
+    --fav-user-text-color: #9bd7ec;
+    --bot-user-text-color: #99d564;
+
+    --background-image-url: url('../assets/media/rose.png');
+}

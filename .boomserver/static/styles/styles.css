@@ -2,13 +2,21 @@ body {
     cursor: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 100 100"%3E%3Ctext y="78" font-size="82"%3E💥%3C/text%3E%3C/svg%3E') 16 16, auto;
     background-color: var(--background-color);
     color: var(--text-color);
+    background-image: var(--background-image-url);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
     display: flex;
-    max-height: 100vh;
+    height: 100vh;
     overflow-y: hidden;
     flex-direction: column;
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */
     user-select: none; /* Standard syntax */
+}
+
+.all {
+    display: contents;
 }
 
 .container {
@@ -181,9 +189,19 @@ pre {
 }
 
 .password-prompt button {
-    padding: 10px 20px;
+    /* padding: 10px 20px;
     font-size: 16px;
-    background-color: lightgrey;
+    background-color: lightgrey; */
+    background-color: var(--primary-color);
+    border: none;
+    color: var(--text-color);
+    padding: 15px 32px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    cursor: pointer;
+    border-radius: 12px
 }
 
 .hover-red:hover {

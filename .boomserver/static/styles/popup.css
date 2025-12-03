@@ -1,6 +1,11 @@
 body {
+    cursor: url('data:image/svg+xml;charset=utf8,%3Csvg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 100 100"%3E%3Ctext y="78" font-size="82"%3E💥%3C/text%3E%3C/svg%3E') 16 16, auto;
     background-color: var(--background-color);
     color: var(--text-color);
+    background-image: var(--background-image-url);
+    background-size: cover;
+    background-repeat: no-repeat;
+    background-position: center center;
     text-align: center;
     -webkit-user-select: none; /* Safari */
     -ms-user-select: none; /* IE 10 and IE 11 */

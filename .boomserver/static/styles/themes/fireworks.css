@@ -1,0 +1,13 @@
+:root {
+    --background-color: #010e1a4b;
+    --primary-color: #070202b2;
+    --secondary-color: #292f4d00;
+
+    --text-color: #ebeef3;
+    --text-emphasis-color: #eb6d6d;
+    --default-user-text-color: #7870e7;
+    --fav-user-text-color: #ffe6a2;
+    --bot-user-text-color: #eb6d6d;
+
+    --background-image-url: url('../assets/media/fireworks.jpg');
+}

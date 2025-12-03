@@ -143,6 +143,42 @@
             "name": "Pastel Pink",
             "author": "Nathan",
             "user-defined": false
+        },
+        {
+            "id": "galaxy",
+            "name": "Galaxy",
+            "author": "Nathan",
+            "user-defined": false
+        },
+        {
+            "id": "dresden",
+            "name": "Dresden",
+            "author": "Nathan and Jack",
+            "user-defined": false
+        },
+        {
+            "id": "cabin",
+            "name": "Cabin",
+            "author": "Nathan and Daniel",
+            "user-defined": false
+        },
+        {
+            "id": "oeschinensee",
+            "name": "Oeschinensee",
+            "author": "Nathan",
+            "user-defined": false
+        },
+        {
+            "id": "fireworks",
+            "name": "Fireworks",
+            "author": "Nathan and Daniel",
+            "user-defined": false
+        },
+        {
+            "id": "rose",
+            "name": "Rose",
+            "author": "Nathan",
+            "user-defined": false
         }
     ]
 }
