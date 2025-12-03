@@ -34,6 +34,13 @@ async function checkPassword() {
     }
 }
 
+function closeLoadingBar() {
+    isLoading = false;
+    fullyLoaded = true;
+    // show page
+    document.getElementById('loadingContainer').style.display = 'none';
+}
+
 async function loadContent() {
     document.getElementById('passwordContainer').style.display = 'none';
     isLoading = true;
@@ -54,10 +61,7 @@ async function loadContent() {
         // setInterval(fetchLogFileContent, 15000);
         // setInterval(fetchBoommeterFileContent, 1000);
 
-        isLoading = false;
-        fullyLoaded = true;
-        // show page
-        document.getElementById('loadingContainer').style.display = 'none';
+        closeLoadingBar();
     });
 }
 
@@ -150,7 +154,7 @@ async function boomFetch(endpoint, body = {}) {
 
             // retry request after delay
             retries += 1;
-            sleep(1000 * retries);
+            sleep(1000 * retries * retries);
 
             continue;
         }
@@ -547,6 +551,7 @@ window.onload = function() {
 
         loadContent();
 
+        createChannelConnection();
     } else {
         document.getElementById('passwordContainer').style.display = 'flex';
 
