@@ -144,8 +144,9 @@ async function boomFetch(endpoint, body = {}) {
             if (response.status === 401) {
                 eraseCookie('boomToken');
                 showAlert("Token Error","Please reload the boom zone");
+                window.location.reload()
             }
-            else if (response.status === 504) {
+            else if (response.status === 504 || response.status === 503) {
                 console.error("Timeout Error","The server took too long to respond. Retrying...");
             }
             else {
@@ -257,9 +258,9 @@ async function fetchBoomBoardDrought() {
     return retVal;
 }
 
-// fetch the boom drought board
+// fetch the boom patch
 async function fetchBoomPatch() {
-    const data = await boomFetch("/run_boom_patchnotes_current_command", { boardcmd : "drought" });
+    const data = await boomFetch("/run_boom_patchnotes_current_command");
 
     let retVal = data.output;
 
@@ -268,9 +269,9 @@ async function fetchBoomPatch() {
     return retVal;
 }
 
-// fetch the boom drought board
+// fetch the boom hall
 async function fetchBoomHall() {
-    const data = await boomFetch("/run_boom_hall_command", { boardcmd : "drought" });
+    const data = await boomFetch("/run_boom_hall_command");
 
     let retVal = data.output;
 
@@ -500,7 +501,7 @@ async function fetchBoommeterFileContent() {
                 usernameElement = document.createElement('span');
                 if (username.toLowerCase().includes('boombot')) {
                     usernameElement.className = 'username-bot';
-                } else if (username === boomFavUsername) {
+                } else if (username === boomFavUsername || username === "*" + boomFavUsername) {
                     usernameElement.className = 'username-fav';
                 } else {
                     usernameElement.className = 'username';

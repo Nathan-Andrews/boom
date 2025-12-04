@@ -82,9 +82,7 @@ async def refresh_results(api_key, command):
     global latest_cmd_results
 
     valid_key, username = ba.validate_key(api_key)
-    if not valid_key:
-        latest_cmd_results.pop(api_key, None)
-        return
+    if not valid_key: return
 
     if api_key not in latest_cmd_results:
         latest_cmd_results[api_key] = {}

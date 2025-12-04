@@ -42,6 +42,10 @@ signal.signal(signal.SIGTERM, handle_exit)
 def index():
     return render_template('.boom.html')
 
+@app.route('/popup')
+def popup():
+    return render_template('popup.html')
+
 @app.route('/favicon.ico')
 def favicon():
     return send_from_directory(os.path.join(app.root_path, 'static'),
@@ -58,7 +62,7 @@ def run_simple_command(cmd):
             return jsonify(error=[f"\"{cmd}\" not in expected command list"]), 400
 
         user_cache = {}
-        timeout = 5
+        timeout = 10
         waited = 0
         while waited < timeout:
             with bc.cache_lock:
