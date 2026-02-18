@@ -34,9 +34,18 @@ fi
 source $configfile
 
 echo Copying over .boomserver from template...
-\cp -Rvf $EXPECTED_BOOMRCS/.boomserver $EXPECTED_BOOMINSTALL || exit 1
+if [ -d "$EXPECTED_BOOMINSTALL/.boomserver/data" ]; then
+  echo Preserving current site data...
+  mv -v "$EXPECTED_BOOMINSTALL/.boomserver/data" "$EXPECTED_BOOMINSTALL"
+fi
 mkdir -pv $EXPECTED_BOOMINSTALL/.boomserver/data/env || exit 1
 chmod 777 $EXPECTED_BOOMINSTALL/.boomserver/data/env || exit 1
+\cp -Rvf $EXPECTED_BOOMRCS/.boomserver $EXPECTED_BOOMINSTALL || exit 1
+if [ -d "$EXPECTED_BOOMINSTALL/data" ]; then
+  echo Restoring existing site data...
+  rm -r "$EXPECTED_BOOMINSTALL/.boomserver/data"
+  mv -v "$EXPECTED_BOOMINSTALL/data" "$EXPECTED_BOOMINSTALL/.boomserver"
+fi
 
 backendfile=$EXPECTED_BOOMINSTALL/.boomserver/.boombackend.py
 echo Configuring $backendfile using boom config...

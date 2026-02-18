@@ -144,6 +144,13 @@ async function boomFetch(endpoint, body = {}) {
             if (response.status === 401) {
                 eraseCookie('boomToken');
                 showAlert("Token Error","Please reload the boom zone");
+                window.location.reload()
+            }
+            else if (response.status === 504 || response.status === 503) {
+                console.error("Timeout Error","The server took too long to respond. Retrying...");
+            }
+            else if (response.status === 504) {
+                console.error("Timeout Error","The server took too long to respond. Retrying...");
             }
             else if (response.status === 504) {
                 console.error("Timeout Error","The server took too long to respond. Retrying...");
@@ -500,7 +507,7 @@ async function fetchBoommeterFileContent() {
                 usernameElement = document.createElement('span');
                 if (username.toLowerCase().includes('boombot')) {
                     usernameElement.className = 'username-bot';
-                } else if (username === boomFavUsername) {
+                } else if (username === boomFavUsername || username === "*" + boomFavUsername) {
                     usernameElement.className = 'username-fav';
                 } else {
                     usernameElement.className = 'username';
